@@ -36,6 +36,8 @@
   <!-- ============ CAPTURAR ============ -->
   <section class="pantalla activa" id="pantallaCapturar">
 
+    <div id="cajaInstalar"></div>
+
     <div class="tarjeta" id="tarjetaCaptura">
       <button class="boton-camara" id="btnFoto">
         <span class="icono">&#128247;</span>
@@ -54,10 +56,18 @@
       <div class="tarjeta">
         <img class="previa" id="previaImg" alt="Vista previa de la foto tomada">
         <div id="avisoUbicacion"></div>
+
+        <button class="whatsapp destacado" id="btnEnviarAhora">
+          <span class="icono">&#10148;</span>
+          <span>Enviar por WhatsApp</span>
+        </button>
+        <button class="secundario" id="btnGuardar" style="margin-top:10px">Guardar para enviar despu&eacute;s</button>
+        <button class="plano" id="btnDescartar">Descartar la foto</button>
       </div>
 
       <div class="tarjeta">
-        <h2>Datos del monitoreo</h2>
+        <details class="avanzado" id="detalleDatos">
+          <summary>Agregar datos del monitoreo <span class="opc">(opcional)</span></summary>
 
         <label for="fZona">Zona / paraje</label>
         <input id="fZona" list="listaZonas" placeholder="Ej.: Gan Gan" autocomplete="off">
@@ -107,14 +117,10 @@
           <input id="fSuperficie" type="number" inputmode="decimal" min="0" step="1" placeholder="Ej.: 150">
         </details>
 
-        <label for="fObs">Observaciones <span class="opc">(opcional)</span></label>
+        <label for="fObs">Observaciones</label>
         <textarea id="fObs" placeholder="Ej.: foco sobre el alambrado norte, mall&iacute;n seco"></textarea>
-      </div>
-
-      <div class="tarjeta">
-        <button class="primario" id="btnGuardar">Guardar registro</button>
-        <button class="secundario" id="btnDescartar" style="margin-top:10px">Descartar foto</button>
-        <p class="nota">Se guarda en el tel&eacute;fono con la fecha y la posici&oacute;n del momento en que sacaste la foto. Lo pod&eacute;s enviar despu&eacute;s, cuando tengas se&ntilde;al.</p>
+        </details>
+        <p class="nota" id="notaDatos">Con la foto y la ubicaci&oacute;n ya alcanza para el mapa. Estos datos suman, pero ninguno es obligatorio.</p>
       </div>
     </div>
   </section>
@@ -179,14 +185,19 @@
   <section class="pantalla" id="pantallaAyuda">
     <div class="tarjeta">
       <h2>C&oacute;mo se usa</h2>
+      <p class="nota">Con se&ntilde;al, son dos toques:</p>
       <ol class="pasos">
-        <li>Par&aacute;te sobre el foco y esper&aacute; a que el indicador de arriba se ponga en verde.</li>
-        <li>Toc&aacute; <strong>Tomar foto del foco</strong>.</li>
-        <li>Complet&aacute; la zona y, si la mediste, la densidad. Lo dem&aacute;s es opcional.</li>
-        <li>Toc&aacute; <strong>Guardar registro</strong>.</li>
-        <li>Cuando tengas se&ntilde;al, and&aacute; a <strong>Registros</strong> y envi&aacute;.</li>
+        <li>Par&aacute;te sobre el foco, esper&aacute; el indicador verde y toc&aacute; <strong>Tomar foto del foco</strong>.</li>
+        <li>Toc&aacute; <strong>Enviar por WhatsApp</strong>.</li>
       </ol>
-      <p class="nota">Sin se&ntilde;al de datos la app funciona igual. El GPS del tel&eacute;fono es independiente de la se&ntilde;al de la compa&ntilde;&iacute;a.</p>
+      <p class="nota">Sin se&ntilde;al, toc&aacute; <strong>Guardar para enviar despu&eacute;s</strong>. Los registros se acumulan en <strong>Registros</strong> y los mand&aacute;s todos juntos cuando volv&eacute;s al pueblo.</p>
+      <p class="nota">La app funciona igual sin se&ntilde;al de datos: el GPS del tel&eacute;fono es independiente de la se&ntilde;al de la compa&ntilde;&iacute;a.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Los datos del monitoreo son opcionales</h2>
+      <p class="nota">Para armar el mapa de focos alcanza con la <strong>foto y la ubicaci&oacute;n</strong>, que la app pone sola. Zona, estadio y densidad suman informaci&oacute;n al mapa, pero si no los complet&aacute;s el punto se registra igual.</p>
+      <p class="nota">Si mediste con el m&eacute;todo de aros, abr&iacute; <strong>Agregar datos del monitoreo</strong> y us&aacute; la calculadora: carg&aacute;s los conteos de los 30 aros separados por espacio y saca la densidad sola.</p>
     </div>
 
     <div class="tarjeta">
@@ -208,9 +219,16 @@
 
     <div class="tarjeta">
       <h2>Instalar en el tel&eacute;fono</h2>
-      <p class="nota"><strong>Android (Chrome):</strong> men&uacute; &#8942; &rarr; <em>Instalar aplicaci&oacute;n</em> o <em>Agregar a pantalla principal</em>.</p>
-      <p class="nota"><strong>iPhone (Safari):</strong> bot&oacute;n Compartir &rarr; <em>Agregar a inicio</em>.</p>
-      <p class="nota">Una vez instalada abre sin internet y queda con &iacute;cono propio.</p>
+      <div id="cajaInstalarAyuda"></div>
+      <p class="nota" id="estadoInstalacion"></p>
+      <p class="nota">Una vez instalada abre sin internet y queda con &iacute;cono propio, como cualquier otra aplicaci&oacute;n. Abrila una vez con se&ntilde;al antes de salir al campo: ah&iacute; se descarga entera.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Para la oficina</h2>
+      <p class="nota">El mapa de focos se arma con las fotos y los mensajes que llegan por WhatsApp:</p>
+      <a class="boton secundario" href="../mapa/" target="_blank" rel="noopener">Abrir el mapa de focos</a>
+      <p class="nota">Conviene abrirlo en una computadora. Acepta el chat exportado de WhatsApp, las fotos, texto pegado y archivos CSV o GeoJSON.</p>
     </div>
   </section>
 
@@ -225,6 +243,7 @@
 
 <canvas id="lienzo" hidden></canvas>
 
+<script src="instalar.js"></script>
 <script src="exif.js"></script>
 <script src="datos.js"></script>
 <script src="app.js"></script>

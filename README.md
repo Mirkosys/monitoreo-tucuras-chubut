@@ -41,8 +41,12 @@ Después se le pasa el link a los técnicos por WhatsApp una sola vez.
 
 ### 2. Instalarla en el teléfono
 
+La app trae un **botón de instalación** arriba de todo. En Android y en Chrome de escritorio se instala de un toque; en iPhone, donde Apple no permite instalación automática, el mismo cartel muestra el paso a paso de Safari. El cartel desaparece solo una vez instalada, y sigue disponible en **Ayuda** para quien lo haya cerrado.
+
+Si hiciera falta a mano:
+
 - **Android (Chrome):** menú ⋮ → *Instalar aplicación*
-- **iPhone (Safari):** botón Compartir → *Agregar a inicio*
+- **iPhone (Safari, obligatorio):** botón Compartir → *Agregar a inicio*
 
 Queda con ícono propio y **abre sin internet**. En la meseta esto es lo importante: el GPS del teléfono funciona aunque no haya señal de datos.
 
@@ -60,17 +64,20 @@ Abrir `mapa/index.html` con doble clic (funciona con doble clic, no necesita ser
 
 ## Cómo se usa a campo
 
-1. Pararse sobre el foco y esperar a que el indicador de arriba se ponga **verde** (precisión ≤ 30 m).
-2. **Tomar foto del foco.**
-3. Completar zona y, si se midió, densidad. Todo lo demás es opcional.
-4. **Guardar registro.**
-5. Cuando haya señal, ir a **Registros** y tocar **Enviar**.
+Con señal, son **dos toques**:
+
+1. Pararse sobre el foco, esperar el indicador **verde** y tocar **Tomar foto del foco**.
+2. Tocar **Enviar por WhatsApp**.
+
+Sin señal, el segundo toque es **Guardar para enviar después**. Los registros se acumulan y se mandan todos juntos al volver al pueblo.
 
 El registro guarda la **fecha y la posición del momento en que se sacó la foto**, no del momento del envío. Un relevamiento hecho el martes en Gan Gan y enviado el viernes desde Trelew se mapea igual, en Gan Gan y con fecha del martes. Esto era el requisito principal.
 
-### Datos que se pueden cargar
+### Los datos del monitoreo son opcionales
 
-Siguen los vocabularios del Programa Provincial:
+Para armar el mapa alcanza con la foto y la ubicación, que la app pone sola. El resto está detrás de **Agregar datos del monitoreo**, plegado, y ningún campo es obligatorio: si no se completa nada, el punto se registra igual.
+
+Cuando sí se cargan, siguen los vocabularios del Programa Provincial:
 
 - **Estadio:** desove (canutos), mosquita (I‑II), saltona (III‑V), adulto/voladora, mixto
 - **Especie:** *Bufonacris claraziana* (tucura sapo), *Dichroplus maculipennis* (alas manchadas), otra, no determinada
@@ -136,13 +143,14 @@ El `1` es la versión del formato. Los códigos (`BC`, `SAL`, `ARO`, `MAL`) est�
 ## Estructura del proyecto
 
 ```
-index.html                  Portada: el link que se reparte a los técnicos
+index.html                  Raíz: lleva directo a la app de campo
 
 app/                        Aplicación de campo (PWA)
   index.html                Pantallas: Capturar, Registros, Ajustes, Ayuda
   app.js                    Lógica: GPS, cámara, marca de agua, envío
   datos.js                  Vocabularios del Programa, IndexedDB, CSV/GeoJSON/KML
   exif.js                   Escritor de EXIF con GPS, sin dependencias
+  instalar.js               Botón de instalación, según navegador y sistema
   styles.css                Alto contraste y botones grandes, para uso a sol pleno
   sw.js                     Service worker: la app abre sin señal
   manifest.webmanifest      Para instalarla como aplicación
@@ -166,6 +174,7 @@ Los documentos de contexto que dieron origen al sistema —el informe a la Legis
 - **Verificación del EXIF.** Las coordenadas escritas se releyeron con Pillow (parser independiente): coinciden con error menor a 10⁻⁶ grados (≈ 10 cm), junto con altitud, error horizontal, datum WGS‑84, fecha de captura y hora GPS en UTC.
 - **Tamaño de las fotos.** Se redimensionan a 1600 px de lado mayor por defecto y quedan en torno a 120‑200 KB, pensando en la conectividad de la meseta. Configurable en Ajustes.
 - **Almacenamiento.** Los registros y las fotos van a IndexedDB; los ajustes, a localStorage. Nada se borra solo: hay un botón para eliminar los ya enviados.
+- **Actualizaciones.** El service worker usa **red primero** para la página y el código, con la caché como respaldo. Así el técnico recibe las correcciones apenas tiene señal, en vez de quedarse con una versión vieja; los íconos, que no cambian, van por caché primero. Al publicar una corrección conviene subir el número de `CACHE` en `app/sw.js`.
 - **Privacidad.** El mapa procesa todo en la computadora local; ningún dato se sube a internet.
 
 ### Si no hay señal de GPS

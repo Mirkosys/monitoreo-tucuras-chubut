@@ -120,6 +120,16 @@ button:disabled { opacity: .5; cursor: default; }
 .peligro { background: #fff; border-color: #e6b7b7; color: var(--rojo); }
 .chico { min-height: 42px; font-size: 15px; padding: 8px 12px; width: auto; }
 
+/* Accion principal despues de sacar la foto */
+.destacado { min-height: 62px; font-size: 19px; font-weight: 700; margin-top: 12px; }
+.destacado .icono { font-size: 20px; }
+
+/* Accion de descarte: presente pero sin competir con las otras dos */
+.plano {
+  background: none; border: none; color: var(--texto-suave);
+  font-weight: 500; min-height: 44px; margin-top: 4px; text-decoration: underline;
+}
+
 .boton-camara {
   min-height: 108px;
   font-size: 20px;

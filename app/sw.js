@@ -4,7 +4,7 @@
    Estrategia: cache primero para los archivos propios, red como respaldo.
    ===================================================================== */
 
-var CACHE = 'tucuras-v1';
+var CACHE = 'tucuras-v2';
 
 var ARCHIVOS = [
   './',
@@ -13,6 +13,7 @@ var ARCHIVOS = [
   './app.js',
   './datos.js',
   './exif.js',
+  './instalar.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -39,6 +40,14 @@ self.addEventListener('activate', function (e) {
   );
 });
 
+function guardarCopia(req, res) {
+  if (res && res.status === 200 && res.type === 'basic') {
+    var copia = res.clone();
+    caches.open(CACHE).then(function (c) { c.put(req, copia); });
+  }
+  return res;
+}
+
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
@@ -46,21 +55,36 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin !== location.origin) return; // recursos externos: sin cache
 
+  // La pagina y los archivos de la app van por RED PRIMERO, con la cache
+  // como respaldo. Asi el tecnico recibe las correcciones apenas tiene
+  // senal, en vez de quedarse con una version vieja para siempre.
+  var esDocumento = req.mode === 'navigate';
+  var esCodigo = /\.(js|css|webmanifest)$/.test(url.pathname);
+
+  if (esDocumento || esCodigo) {
+    e.respondWith(
+      fetch(req)
+        .then(function (res) { return guardarCopia(req, res); })
+        .catch(function () {
+          return caches.match(req).then(function (hit) {
+            if (hit) return hit;
+            if (esDocumento) return caches.match('./index.html');
+            return new Response('Sin conexion', { status: 503, statusText: 'Sin conexion' });
+          });
+        })
+    );
+    return;
+  }
+
+  // Iconos y demas recursos estables: cache primero, que es mas rapido.
   e.respondWith(
     caches.match(req).then(function (hit) {
       if (hit) return hit;
-      return fetch(req).then(function (res) {
-        // Guardamos una copia para la proxima salida a campo.
-        if (res && res.status === 200 && res.type === 'basic') {
-          var copia = res.clone();
-          caches.open(CACHE).then(function (c) { c.put(req, copia); });
-        }
-        return res;
-      }).catch(function () {
-        // Sin red y sin cache: si pedian una pagina, devolvemos la principal.
-        if (req.mode === 'navigate') return caches.match('./index.html');
-        return new Response('Sin conexion', { status: 503, statusText: 'Sin conexion' });
-      });
+      return fetch(req)
+        .then(function (res) { return guardarCopia(req, res); })
+        .catch(function () {
+          return new Response('Sin conexion', { status: 503, statusText: 'Sin conexion' });
+        });
     })
   );
 });

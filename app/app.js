@@ -340,9 +340,11 @@
     $('resultadoAros').textContent = ' ';
     $('avisoUmbral').innerHTML = '';
     $('bloqueEscala').hidden = true;
+    $('detalleDatos').open = false; // los datos arrancan plegados: son opcionales
 
     pintarAvisoUbicacion();
     $('tarjetaCaptura').hidden = true;
+    $('cajaInstalar').hidden = true; // con la foto en pantalla, no distraemos
     $('fichaRegistro').hidden = false;
     window.scrollTo(0, 0);
   }
@@ -354,6 +356,7 @@
     $('previaImg').removeAttribute('src');
     $('fichaRegistro').hidden = true;
     $('tarjetaCaptura').hidden = false;
+    $('cajaInstalar').hidden = false;
     $('entradaFoto').value = '';
   }
 
@@ -410,11 +413,13 @@
 
   /* ================== Guardar ================== */
 
-  function guardarRegistro() {
+  // El registro se guarda SIEMPRE antes de intentar enviarlo: si el envio se
+  // cancela o falla, el relevamiento no se pierde y queda en Registros.
+  function guardarRegistro(enviarAhora) {
     var reg = leerFormulario();
     if (!estado.archivoOriginal) { brindis('No hay foto para guardar'); return; }
 
-    cargando('Guardando el registro...');
+    cargando(enviarAhora ? 'Preparando el envio...' : 'Guardando el registro...');
     procesarFoto(estado.archivoOriginal, reg).then(function (blob) {
       reg.foto = blob;
       reg.tamanoFoto = blob.size;
@@ -423,8 +428,13 @@
       ocultarCargando();
       cerrarFicha();
       actualizarGlobo();
-      mostrarPantalla('Registros');
-      brindis('Registro ' + reg.id + ' guardado');
+      if (enviarAhora) {
+        // Volvemos a Capturar: a campo lo normal es encadenar un foco tras otro.
+        enviarRegistro(reg);
+      } else {
+        mostrarPantalla('Registros');
+        brindis('Registro ' + reg.id + ' guardado. Envialo cuando tengas senal', 4500);
+      }
     }).catch(function (e) {
       ocultarCargando();
       alert('No se pudo guardar el registro.\n\n' + (e && e.message ? e.message : e));
@@ -470,9 +480,16 @@
     // Camino ideal: compartir foto + texto en un solo paso (Web Share nivel 2).
     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
       navigator.share({ files: [archivo], text: texto, title: 'Monitoreo de tucuras ' + reg.id })
-        .then(function () { marcarEnviado(reg); })
+        .then(function () {
+          marcarEnviado(reg);
+          brindis('Registro ' + reg.id + ' enviado');
+        })
         .catch(function (e) {
-          if (e && e.name === 'AbortError') return; // el usuario cancelo
+          // Si el usuario cancela, el registro ya quedo guardado en Registros.
+          if (e && e.name === 'AbortError') {
+            brindis('Envio cancelado. El registro quedo guardado en Registros', 4000);
+            return;
+          }
           envioEnDosPasos(reg, texto);
         });
       return;
@@ -664,6 +681,30 @@
     });
   }
 
+  /* ================== Instalacion ================== */
+
+  // El cartel de instalacion va en dos lugares: arriba de la pantalla de
+  // captura, donde se ve al abrir la app por primera vez, y en Ayuda, para
+  // quien lo cerro y despues quiere instalarla igual.
+  function montarInstalacion() {
+    var I = window.InstalarApp;
+    if (!I) return;
+
+    // Arriba de la pantalla de captura: se puede cerrar y no vuelve a molestar.
+    I.montar('cajaInstalar');
+    // En Ayuda: siempre visible, para quien lo cerro y despues se arrepiente.
+    I.montar('cajaInstalarAyuda', { ignorarDescarte: true });
+
+    if (I.yaInstalada()) {
+      $('estadoInstalacion').innerHTML = '<strong>La app ya esta instalada en este telefono.</strong>';
+    }
+
+    document.addEventListener('tucuras:instalada', function () {
+      $('estadoInstalacion').innerHTML = '<strong>La app ya esta instalada en este telefono.</strong>';
+      brindis('App instalada. Ya podes abrirla desde el icono', 4500);
+    });
+  }
+
   /* ================== Arranque ================== */
 
   function conectar() {
@@ -710,7 +751,8 @@
       pintarAvisoUmbral();
       brindis('Densidad cargada: ' + d + ' tucuras/m2');
     });
-    $('btnGuardar').addEventListener('click', guardarRegistro);
+    $('btnEnviarAhora').addEventListener('click', function () { guardarRegistro(true); });
+    $('btnGuardar').addEventListener('click', function () { guardarRegistro(false); });
     $('btnDescartar').addEventListener('click', function () {
       if (confirm('Descartar esta foto sin guardarla?')) cerrarFicha();
     });
@@ -763,6 +805,7 @@
     conectar();
     iniciarGps();
     actualizarGlobo();
+    montarInstalacion();
 
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('sw.js').catch(function () { /* sin modo offline */ });
