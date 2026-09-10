@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitoreo de Tucuras - Chubut</title>
+<meta name="description" content="Registro georreferenciado de focos de tucuras para el Programa Provincial MIP Tucuras (Chubut).">
+<meta name="theme-color" content="#1c5e3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tucuras">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="titulo">
+    <img src="icons/icon-192.png" alt="">
+    <div>
+      <h1>Monitoreo de Tucuras</h1>
+      <p class="sub">Chubut &middot; Programa Provincial MIP</p>
+    </div>
+  </div>
+  <div class="gps" id="chipGps" role="button" tabindex="0">
+    <span class="punto"></span>
+    <span class="txt" id="gpsTexto">Buscando ubicaci&oacute;n&hellip;</span>
+    <span class="recargar">Actualizar</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ CAPTURAR ============ -->
+  <section class="pantalla activa" id="pantallaCapturar">
+
+    <div class="tarjeta" id="tarjetaCaptura">
+      <button class="boton-camara" id="btnFoto">
+        <span class="icono">&#128247;</span>
+        <span>Tomar foto del foco</span>
+        <small>La ubicaci&oacute;n se guarda sola</small>
+      </button>
+      <input type="file" accept="image/*" capture="environment" id="entradaFoto" hidden>
+      <div class="fila" style="margin-top:10px">
+        <button class="secundario chico" id="btnGaleria" style="width:100%">Elegir foto de la galer&iacute;a</button>
+      </div>
+      <p class="nota">Sac&aacute; la foto parada sobre el foco. Sirve sin se&ntilde;al de datos: el GPS del tel&eacute;fono funciona igual.</p>
+    </div>
+
+    <!-- Ficha del registro, aparece despues de tomar la foto -->
+    <div id="fichaRegistro" hidden>
+      <div class="tarjeta">
+        <img class="previa" id="previaImg" alt="Vista previa de la foto tomada">
+        <div id="avisoUbicacion"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Datos del monitoreo</h2>
+
+        <label for="fZona">Zona / paraje</label>
+        <input id="fZona" list="listaZonas" placeholder="Ej.: Gan Gan" autocomplete="off">
+        <datalist id="listaZonas"></datalist>
+
+        <label for="fEstablecimiento">Establecimiento <span class="opc">(opcional)</span></label>
+        <input id="fEstablecimiento" placeholder="Ej.: El &Aacute;lamo" autocomplete="off">
+
+        <label for="fEstadio">Estadio observado</label>
+        <select id="fEstadio"></select>
+
+        <div class="dupla">
+          <div>
+            <label for="fDensidad">Densidad <span class="opc">(tucuras/m&sup2;)</span></label>
+            <input id="fDensidad" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ej.: 22">
+          </div>
+          <div>
+            <label for="fMetodo">M&eacute;todo</label>
+            <select id="fMetodo"></select>
+          </div>
+        </div>
+        <div id="avisoUmbral"></div>
+
+        <div id="bloqueEscala" hidden>
+          <label for="fEscala">Resultado de la recorrida</label>
+          <select id="fEscala"></select>
+        </div>
+
+        <details class="avanzado" id="calcAros">
+          <summary>Calculadora del m&eacute;todo de aros</summary>
+          <p class="nota">Anot&aacute; cu&aacute;ntas tucuras saltaron de cada aro, separadas por espacio. Cada aro es de 0,1 m&sup2;, as&iacute; que el promedio se multiplica por 10.</p>
+          <input id="fAros" inputmode="numeric" placeholder="Ej.: 2 0 5 3 1 4 0 2 7 3" autocomplete="off">
+          <p class="nota" id="resultadoAros">&nbsp;</p>
+          <button class="secundario chico" id="btnUsarAros" style="width:100%">Usar este valor</button>
+        </details>
+
+        <details class="avanzado">
+          <summary>M&aacute;s datos (especie, ambiente, superficie)</summary>
+
+          <label for="fEspecie">Especie</label>
+          <select id="fEspecie"></select>
+
+          <label for="fAmbiente">Ambiente</label>
+          <select id="fAmbiente"></select>
+
+          <label for="fSuperficie">Superficie afectada estimada <span class="opc">(ha)</span></label>
+          <input id="fSuperficie" type="number" inputmode="decimal" min="0" step="1" placeholder="Ej.: 150">
+        </details>
+
+        <label for="fObs">Observaciones <span class="opc">(opcional)</span></label>
+        <textarea id="fObs" placeholder="Ej.: foco sobre el alambrado norte, mall&iacute;n seco"></textarea>
+      </div>
+
+      <div class="tarjeta">
+        <button class="primario" id="btnGuardar">Guardar registro</button>
+        <button class="secundario" id="btnDescartar" style="margin-top:10px">Descartar foto</button>
+        <p class="nota">Se guarda en el tel&eacute;fono con la fecha y la posici&oacute;n del momento en que sacaste la foto. Lo pod&eacute;s enviar despu&eacute;s, cuando tengas se&ntilde;al.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REGISTROS ============ -->
+  <section class="pantalla" id="pantallaRegistros">
+    <div class="tarjeta">
+      <h2>Registros guardados</h2>
+      <p class="nota" id="resumenRegistros">&nbsp;</p>
+      <div class="fila">
+        <button class="secundario chico" id="btnExportarCSV">Exportar CSV</button>
+        <button class="secundario chico" id="btnExportarGeo">GeoJSON</button>
+        <button class="secundario chico" id="btnExportarKML">KML</button>
+      </div>
+      <button class="whatsapp" id="btnResumenWA" style="margin-top:10px">Enviar resumen de pendientes por WhatsApp</button>
+    </div>
+    <div id="listaRegistros"></div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section class="pantalla" id="pantallaAjustes">
+    <div class="tarjeta">
+      <h2>Datos del monitoreador</h2>
+      <label for="aNombre">Tu nombre</label>
+      <input id="aNombre" placeholder="Ej.: J. P&eacute;rez" autocomplete="name">
+
+      <label for="aZona">Zona habitual <span class="opc">(se completa sola)</span></label>
+      <input id="aZona" list="listaZonas" placeholder="Ej.: Gan Gan" autocomplete="off">
+    </div>
+
+    <div class="tarjeta">
+      <h2>Destino de los env&iacute;os</h2>
+      <label for="aTelefono">WhatsApp de Sanidad Vegetal</label>
+      <input id="aTelefono" type="tel" inputmode="tel" placeholder="Ej.: 5492804123456">
+      <p class="nota">C&oacute;digo de pa&iacute;s + &aacute;rea sin 0 y sin 15. Para Chubut: <strong>549280&hellip;</strong> o <strong>5492945&hellip;</strong>. Si lo dej&aacute;s vac&iacute;o, al enviar vas a poder elegir el contacto a mano.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Foto</h2>
+      <label for="aTamano">Tama&ntilde;o m&aacute;ximo</label>
+      <select id="aTamano">
+        <option value="1280">1280 px &mdash; liviana, para se&ntilde;al mala</option>
+        <option value="1600">1600 px &mdash; recomendada</option>
+        <option value="2048">2048 px &mdash; m&aacute;s detalle</option>
+      </select>
+
+      <label style="display:flex;align-items:center;gap:10px;margin-top:16px">
+        <input type="checkbox" id="aMarca" style="width:auto;min-height:auto" checked>
+        <span>Escribir las coordenadas sobre la foto</span>
+      </label>
+      <p class="nota">Muy recomendable: WhatsApp borra los metadatos al enviar la imagen como foto, pero el texto sobre la imagen queda siempre.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Mantenimiento</h2>
+      <p class="nota" id="infoEspacio">&nbsp;</p>
+      <button class="peligro" id="btnBorrarEnviados">Borrar los registros ya enviados</button>
+    </div>
+  </section>
+
+  <!-- ============ AYUDA ============ -->
+  <section class="pantalla" id="pantallaAyuda">
+    <div class="tarjeta">
+      <h2>C&oacute;mo se usa</h2>
+      <ol class="pasos">
+        <li>Par&aacute;te sobre el foco y esper&aacute; a que el indicador de arriba se ponga en verde.</li>
+        <li>Toc&aacute; <strong>Tomar foto del foco</strong>.</li>
+        <li>Complet&aacute; la zona y, si la mediste, la densidad. Lo dem&aacute;s es opcional.</li>
+        <li>Toc&aacute; <strong>Guardar registro</strong>.</li>
+        <li>Cuando tengas se&ntilde;al, and&aacute; a <strong>Registros</strong> y envi&aacute;.</li>
+      </ol>
+      <p class="nota">Sin se&ntilde;al de datos la app funciona igual. El GPS del tel&eacute;fono es independiente de la se&ntilde;al de la compa&ntilde;&iacute;a.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2 style="color:#cf2d2d">Importante al enviar por WhatsApp</h2>
+      <p class="nota">WhatsApp <strong>borra los metadatos</strong> (incluida la ubicaci&oacute;n) cuando la imagen viaja como foto normal, porque la recomprime. Por eso cada registro sale por tres v&iacute;as al mismo tiempo:</p>
+      <ol class="pasos">
+        <li><strong>Coordenadas escritas sobre la imagen</strong>: se ven siempre, aunque WhatsApp recomprima.</li>
+        <li><strong>Texto del mensaje</strong>: WhatsApp nunca lo modifica. Ah&iacute; va la l&iacute;nea <code>#TUCURA|&hellip;</code> que lee el mapa.</li>
+        <li><strong>Metadatos EXIF con GPS</strong>: sobreviven solo si el archivo se manda como <strong>Documento</strong>.</li>
+      </ol>
+      <p class="nota">Para que llegue el archivo intacto: <strong>Adjuntar &rarr; Documento &rarr; Explorar</strong> y eleg&iacute; la foto descargada, en vez de <strong>Galer&iacute;a</strong>.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Umbral de control</h2>
+      <p class="nota">El Programa Provincial toma como umbral de control <strong>8 a 10 tucuras/m&sup2;</strong>, junto con el estado general de la vegetaci&oacute;n. Por debajo de ese valor, seguimiento; por encima, corresponde evaluar herramientas de manejo.</p>
+      <p class="nota">M&eacute;todo de aros (Onsager y Henry, 1977): 3 o 4 transectas de 10 aros de 0,1 m&sup2;, colocados el d&iacute;a anterior. Se remueve la vegetaci&oacute;n de cada aro con un puntero y se cuentan las tucuras que saltan. Densidad por m&sup2; = promedio por aro &times; 10.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Instalar en el tel&eacute;fono</h2>
+      <p class="nota"><strong>Android (Chrome):</strong> men&uacute; &#8942; &rarr; <em>Instalar aplicaci&oacute;n</em> o <em>Agregar a pantalla principal</em>.</p>
+      <p class="nota"><strong>iPhone (Safari):</strong> bot&oacute;n Compartir &rarr; <em>Agregar a inicio</em>.</p>
+      <p class="nota">Una vez instalada abre sin internet y queda con &iacute;cono propio.</p>
+    </div>
+  </section>
+
+</main>
+
+<nav class="pestanas">
+  <button data-pantalla="Capturar" class="activa"><span class="icono">&#128247;</span>Capturar</button>
+  <button data-pantalla="Registros"><span class="icono">&#128203;</span>Registros<span class="globo" id="globoPendientes" hidden></span></button>
+  <button data-pantalla="Ajustes"><span class="icono">&#9881;</span>Ajustes</button>
+  <button data-pantalla="Ayuda"><span class="icono">&#10067;</span>Ayuda</button>
+</nav>
+
+<canvas id="lienzo" hidden></canvas>
+
+<script src="exif.js"></script>
+<script src="datos.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

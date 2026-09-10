@@ -1,0 +1,13 @@
+# Documentacion de contexto: son documentos oficiales de trabajo interno,
+# no se publican en el repositorio.
+*.docx
+*.doc
+*.pdf
+
+# Configuracion local del editor
+.claude/
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa de focos de tucuras - Chubut</title>
+<link rel="icon" href="../app/icons/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root {
+    --verde: #1c5e3e;
+    --borde: #d7ddd6;
+    --texto: #17201b;
+    --suave: #5a655e;
+    --fondo: #f5f5f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px; color: var(--texto); background: var(--fondo);
+  }
+  header {
+    background: var(--verde); color: #fff; padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  header img { width: 32px; height: 32px; border-radius: 7px; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; font-size: 12px; opacity: .85; }
+
+  .disposicion { display: flex; min-height: calc(100vh - 58px); align-items: stretch; }
+  .panel {
+    width: 380px; flex: none; padding: 16px; overflow-y: auto;
+    max-height: calc(100vh - 58px); border-right: 1px solid var(--borde); background: #fff;
+  }
+  #mapa { flex: 1; min-height: 420px; }
+
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .5px; color: var(--suave); margin: 22px 0 8px; }
+  h2:first-of-type { margin-top: 0; }
+
+  .soltar {
+    border: 2px dashed #b9c4bc; border-radius: 12px; padding: 22px 14px;
+    text-align: center; color: var(--suave); cursor: pointer; background: #fbfcfb;
+  }
+  .soltar:hover, .soltar.encima { border-color: var(--verde); background: #eef5f0; color: var(--verde); }
+  .soltar strong { display: block; color: var(--texto); margin-bottom: 4px; font-size: 15px; }
+
+  textarea {
+    width: 100%; min-height: 92px; font: inherit; font-size: 13px; padding: 9px;
+    border: 1px solid var(--borde); border-radius: 9px; resize: vertical;
+  }
+  button {
+    font: inherit; padding: 9px 13px; border-radius: 9px; border: 1px solid var(--borde);
+    background: #fff; cursor: pointer; font-weight: 600;
+  }
+  button:hover { background: #f0f3f1; }
+  button.primario { background: var(--verde); color: #fff; border-color: var(--verde); }
+  button.primario:hover { background: #164c32; }
+  .botonera { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .botonera button { flex: 1 1 auto; }
+
+  select, input[type=text], input[type=date] {
+    width: 100%; font: inherit; padding: 8px 10px; margin-bottom: 8px;
+    border: 1px solid var(--borde); border-radius: 9px; background: #fff;
+  }
+  .dupla { display: flex; gap: 8px; }
+  .dupla > * { flex: 1; min-width: 0; }
+  label.mini { font-size: 12px; color: var(--suave); display: block; margin-bottom: 2px; }
+
+  .aviso { padding: 10px 12px; border-radius: 9px; font-size: 13px; margin: 12px 0; border-left: 4px solid; }
+  .aviso.info { background: #eef5f0; border-color: var(--verde); }
+  .aviso.ok { background: #e9f7ee; border-color: #2f9e5e; }
+  .aviso.atencion { background: #fdf3dd; border-color: #e8a82c; }
+  .aviso.error { background: #fbe9e9; border-color: #cf2d2d; }
+
+  #resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .dato { background: #f4f6f4; border-radius: 10px; padding: 10px; }
+  .dato strong { display: block; font-size: 20px; line-height: 1.1; }
+  .dato span { font-size: 11px; color: var(--suave); }
+
+  .tabla-caja { max-height: 320px; overflow: auto; border: 1px solid var(--borde); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eceee9; white-space: nowrap; }
+  th { background: #f4f6f4; position: sticky; top: 0; font-size: 11px; text-transform: uppercase; color: var(--suave); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #eef5f0; }
+  td.num { text-align: right; }
+  td.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; }
+  .punto { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+
+  .leyenda {
+    background: rgba(255, 255, 255, .94); padding: 9px 11px; border-radius: 9px;
+    font-size: 12px; line-height: 1.7; box-shadow: 0 1px 5px rgba(0, 0, 0, .3);
+  }
+  .leyenda span { display: block; }
+  .leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 7px; vertical-align: -1px; }
+
+  .popup h4 { margin: 0 0 6px; font-size: 14px; font-family: ui-monospace, Menlo, monospace; }
+  .popup img { width: 100%; border-radius: 7px; margin-bottom: 7px; }
+  .popup table { font-size: 12px; }
+  .popup th { background: none; text-transform: none; font-weight: 600; color: var(--suave); padding: 2px 8px 2px 0; white-space: nowrap; }
+  .popup td { padding: 2px 0; white-space: normal; }
+
+  p.nota { font-size: 12px; color: var(--suave); line-height: 1.5; }
+
+  @media (max-width: 860px) {
+    .disposicion { flex-direction: column; }
+    .panel { width: auto; max-height: none; border-right: none; border-bottom: 1px solid var(--borde); }
+    #mapa { min-height: 70vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="../app/icons/icon-192.png" alt="">
+  <div>
+    <h1>Mapa de focos de tucuras &mdash; Chubut</h1>
+    <p>Programa Provincial de Monitoreo y Manejo Integrado de Tucuras</p>
+  </div>
+</header>
+
+<div class="disposicion">
+  <aside class="panel">
+
+    <h2>Cargar datos</h2>
+    <div class="soltar" id="zonaSoltar">
+      <strong>Arrastr&aacute; los archivos ac&aacute;</strong>
+      fotos .jpg &middot; chat exportado _chat.txt &middot; .csv &middot; .geojson<br>
+      <small>o hac&eacute; clic para elegirlos</small>
+    </div>
+    <input type="file" id="entradaArchivos" multiple hidden
+           accept=".jpg,.jpeg,.txt,.csv,.geojson,.json,image/jpeg,text/plain">
+
+    <h2>Pegar mensajes</h2>
+    <textarea id="areaPegar" placeholder="Peg&aacute; ac&aacute; los mensajes copiados de WhatsApp Web. Se leen las l&iacute;neas #TUCURA|... y tambi&eacute;n los mensajes de ubicaci&oacute;n."></textarea>
+    <div class="botonera">
+      <button class="primario" id="btnPegar">Leer el texto pegado</button>
+    </div>
+
+    <div class="aviso info" id="aviso">
+      Cargu&eacute; nada todav&iacute;a. Todo se procesa en esta computadora: ning&uacute;n dato sale a internet.
+    </div>
+
+    <h2>Resumen</h2>
+    <div id="resumen"></div>
+
+    <h2>Filtros</h2>
+    <select id="filtroZona"><option value="">Todas las zonas</option></select>
+    <select id="filtroEstadio"><option value="">Todos los estadios</option></select>
+    <select id="filtroNivel">
+      <option value="">Todos los niveles</option>
+      <option value="MUYALTO">Muy alto (&gt; 30/m&sup2;)</option>
+      <option value="ALTO">Alto (15-30/m&sup2;)</option>
+      <option value="UMBRAL">En umbral (8-15/m&sup2;)</option>
+      <option value="BAJO">Bajo (&lt; 8/m&sup2;)</option>
+      <option value="SD">Sin dato de densidad</option>
+    </select>
+    <div class="dupla">
+      <div><label class="mini" for="filtroDesde">Desde</label><input type="date" id="filtroDesde"></div>
+      <div><label class="mini" for="filtroHasta">Hasta</label><input type="date" id="filtroHasta"></div>
+    </div>
+    <input type="text" id="filtroTexto" placeholder="Buscar por ID, establecimiento, monitoreador...">
+    <div class="botonera">
+      <button id="btnLimpiarFiltros">Limpiar filtros</button>
+    </div>
+
+    <h2>Puntos <span id="conteoTabla" style="font-weight:400;text-transform:none"></span></h2>
+    <div class="tabla-caja">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Fecha</th><th>Zona</th><th>Estadio</th><th>Tuc/m&sup2;</th><th>Coordenadas</th></tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+      </table>
+    </div>
+
+    <h2>Exportar lo filtrado</h2>
+    <div class="botonera">
+      <button id="btnCSV">CSV</button>
+      <button id="btnGeo">GeoJSON</button>
+      <button id="btnKML">KML</button>
+    </div>
+    <div class="botonera">
+      <button id="btnVaciar">Vaciar la sesi&oacute;n</button>
+    </div>
+    <p class="nota">El GeoJSON y el KML abren directo en QGIS, Google Earth y Google My Maps. El CSV usa punto y coma, listo para Excel en castellano.</p>
+
+  </aside>
+
+  <div id="mapa"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="../app/datos.js"></script>
+<script src="exif-read.js"></script>
+<script src="mapa.js"></script>
+</body>
+</html>

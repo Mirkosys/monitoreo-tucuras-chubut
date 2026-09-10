@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitoreo de Tucuras - Chubut</title>
+<meta name="description" content="Sistema de relevamiento georreferenciado de focos de tucuras. Programa Provincial de Monitoreo y Manejo Integrado de Tucuras, Chubut.">
+<meta name="theme-color" content="#1c5e3e">
+<link rel="icon" href="app/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="app/icons/apple-touch-icon.png">
+<style>
+  :root {
+    --verde: #1c5e3e;
+    --verde-claro: #e7f1ea;
+    --ambar: #e8a82c;
+    --texto: #17201b;
+    --suave: #5a655e;
+    --borde: #d7ddd6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 17px; line-height: 1.5;
+    color: var(--texto); background: #f5f5f0;
+  }
+  header {
+    background: var(--verde); color: #fff;
+    padding: 28px 20px calc(28px + env(safe-area-inset-top, 0px));
+    text-align: center;
+  }
+  header img { width: 62px; height: 62px; border-radius: 14px; }
+  header h1 { font-size: 22px; margin: 12px 0 4px; }
+  header p { margin: 0; opacity: .88; font-size: 14px; }
+
+  main { max-width: 620px; margin: 0 auto; padding: 20px 16px 56px; }
+
+  .tarjeta {
+    background: #fff; border: 1px solid var(--borde); border-radius: 14px;
+    padding: 18px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.05);
+  }
+  h2 { font-size: 17px; margin: 0 0 10px; }
+
+  a.boton {
+    display: flex; align-items: center; gap: 13px;
+    text-decoration: none; color: #fff; background: var(--verde);
+    padding: 17px 18px; border-radius: 12px; font-weight: 700; font-size: 18px;
+    margin-bottom: 10px;
+  }
+  a.boton .icono { font-size: 27px; line-height: 1; }
+  a.boton small { display: block; font-weight: 400; font-size: 13px; opacity: .9; }
+  a.boton.claro { background: #fff; color: var(--texto); border: 1px solid var(--borde); }
+
+  ol { padding-left: 22px; margin: 10px 0; }
+  ol li { margin-bottom: 9px; }
+  p.nota { font-size: 14px; color: var(--suave); }
+  .aviso {
+    background: #fdf3dd; border-left: 5px solid var(--ambar);
+    padding: 12px 14px; border-radius: 10px; font-size: 14px; margin: 12px 0;
+  }
+  .paso { display: none; }
+  .paso.activo { display: block; }
+  .fila-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .fila-tabs button {
+    flex: 1; font: inherit; font-weight: 600; padding: 11px; cursor: pointer;
+    border: 1px solid var(--borde); background: #fff; border-radius: 10px; color: var(--suave);
+  }
+  .fila-tabs button.activo { background: var(--verde); color: #fff; border-color: var(--verde); }
+  footer { text-align: center; font-size: 13px; color: var(--suave); padding: 0 16px 30px; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="app/icons/icon-192.png" alt="">
+  <h1>Monitoreo de Tucuras</h1>
+  <p>Chubut &middot; Programa Provincial de Manejo Integrado</p>
+</header>
+
+<main>
+
+  <div class="tarjeta">
+    <h2>Abrir</h2>
+    <a class="boton" href="app/">
+      <span class="icono">&#128247;</span>
+      <span>App de campo<small>Sacar la foto del foco con su ubicaci&oacute;n</small></span>
+    </a>
+    <a class="boton claro" href="mapa/">
+      <span class="icono">&#128506;</span>
+      <span>Mapa de focos<small>Para la oficina: armar el mapa con lo que llega</small></span>
+    </a>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Instalar la app en el celular</h2>
+    <div class="fila-tabs">
+      <button id="tabAndroid" class="activo">Android</button>
+      <button id="tabIphone">iPhone</button>
+    </div>
+
+    <div class="paso activo" id="pasoAndroid">
+      <ol>
+        <li>Abr&iacute; esta p&aacute;gina en <strong>Chrome</strong>.</li>
+        <li>Toc&aacute; el men&uacute; <strong>&#8942;</strong> arriba a la derecha.</li>
+        <li>Eleg&iacute; <strong>Instalar aplicaci&oacute;n</strong>. Si no aparece, busc&aacute; <strong>Agregar a pantalla principal</strong>.</li>
+        <li>Confirm&aacute;. Queda el &iacute;cono verde junto a las dem&aacute;s apps.</li>
+      </ol>
+      <p class="nota">Convien&eacute; desactivar el ahorro de bater&iacute;a para esta app: algunos tel&eacute;fonos apagan el GPS en segundo plano.</p>
+    </div>
+
+    <div class="paso" id="pasoIphone">
+      <ol>
+        <li>Abr&iacute; esta p&aacute;gina en <strong>Safari</strong>. Desde Chrome en iPhone no se puede instalar.</li>
+        <li>Toc&aacute; el bot&oacute;n <strong>Compartir</strong>, abajo al centro.</li>
+        <li>Desliz&aacute; hacia abajo y eleg&iacute; <strong>Agregar a inicio</strong>.</li>
+        <li>Toc&aacute; <strong>Agregar</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="aviso">
+      <strong>Dos cosas que no hay que saltear:</strong><br>
+      1. Cuando pida la ubicaci&oacute;n, eleg&iacute; <strong>Permitir</strong> o <strong>Mientras se usa la app</strong>.<br>
+      2. Abrila una vez <strong>con se&ntilde;al</strong>, en el pueblo, antes de salir al campo. Ah&iacute; se descarga entera y despu&eacute;s funciona sin internet.
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>C&oacute;mo se usa a campo</h2>
+    <ol>
+      <li>Pararse sobre el foco y esperar a que el indicador de arriba se ponga <strong>verde</strong>.</li>
+      <li><strong>Tomar foto del foco.</strong></li>
+      <li>Completar la zona y, si se midi&oacute;, la densidad. Lo dem&aacute;s es opcional.</li>
+      <li><strong>Guardar registro.</strong></li>
+      <li>Cuando haya se&ntilde;al, ir a <strong>Registros</strong> y tocar <strong>Enviar</strong>.</li>
+    </ol>
+    <p class="nota">Cada registro guarda la fecha y la posici&oacute;n <strong>del momento de la foto</strong>, no del env&iacute;o. Un relevamiento hecho el martes en el campo y enviado el viernes desde el pueblo se mapea igual, donde y cuando corresponde.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Al enviar por WhatsApp</h2>
+    <p class="nota">WhatsApp borra la ubicaci&oacute;n de los metadatos cuando la imagen viaja como foto normal. Por eso la app manda las coordenadas <strong>escritas sobre la imagen</strong> y <strong>en el texto del mensaje</strong>, que WhatsApp nunca modifica. Con eso alcanza para armar el mapa.</p>
+    <p class="nota">Si adem&aacute;s quer&eacute;s que llegue el archivo intacto con sus metadatos, us&aacute; <strong>Descargar</strong> y mandalo con <strong>Adjuntar &rarr; Documento</strong>, en vez de Galer&iacute;a.</p>
+  </div>
+
+</main>
+
+<footer>
+  Ministerio de la Producci&oacute;n del Chubut &middot; COPROSAVE<br>
+  En articulaci&oacute;n con SENASA, INTA y CONICET
+</footer>
+
+<script>
+  var tA = document.getElementById('tabAndroid'), tI = document.getElementById('tabIphone');
+  var pA = document.getElementById('pasoAndroid'), pI = document.getElementById('pasoIphone');
+  function mostrar(esIphone) {
+    tI.classList.toggle('activo', esIphone);
+    tA.classList.toggle('activo', !esIphone);
+    pI.classList.toggle('activo', esIphone);
+    pA.classList.toggle('activo', !esIphone);
+  }
+  tA.addEventListener('click', function () { mostrar(false); });
+  tI.addEventListener('click', function () { mostrar(true); });
+  // Arrancamos en la pestana que corresponde al telefono de quien abre la pagina.
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mostrar(true);
+</script>
+
+</body>
+</html>
