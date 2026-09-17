@@ -94,6 +94,22 @@
   .leyenda span { display: block; }
   .leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 7px; vertical-align: -1px; }
 
+  td.sel { width: 1%; padding: 2px 6px; text-align: center; }
+  td.sel input { margin: 0; cursor: pointer; }
+  button.quitar {
+    border: none; background: none; color: #b0b8b2; font-size: 17px; line-height: 1;
+    padding: 2px 6px; cursor: pointer; font-weight: 700; border-radius: 6px;
+  }
+  button.quitar:hover { background: #fbe9e9; color: #cf2d2d; }
+  button.peligro { border-color: #e6b7b7; color: #cf2d2d; font-weight: 700; }
+  button.peligro:hover { background: #fbe9e9; }
+  button.borrar-punto {
+    width: 100%; margin-top: 9px; padding: 8px; font-size: 13px;
+    border: 1px solid #e6b7b7; background: #fff; color: #cf2d2d;
+    border-radius: 8px; cursor: pointer; font-weight: 600;
+  }
+  button.borrar-punto:hover { background: #fbe9e9; }
+
   .popup h4 { margin: 0 0 6px; font-size: 14px; font-family: ui-monospace, Menlo, monospace; }
   .popup img { width: 100%; border-radius: 7px; margin-bottom: 7px; }
   .popup table { font-size: 12px; }
@@ -168,11 +184,13 @@
     <div class="tabla-caja">
       <table>
         <thead>
-          <tr><th>ID</th><th>Fecha</th><th>Zona</th><th>Estadio</th><th>Tuc/m&sup2;</th><th>Coordenadas</th></tr>
+          <tr><th></th><th>ID</th><th>Fecha</th><th>Zona</th><th>Estadio</th><th>Tuc/m&sup2;</th><th>Coordenadas</th><th></th></tr>
         </thead>
         <tbody id="cuerpoTabla"></tbody>
       </table>
     </div>
+    <button id="btnBorrarSeleccion" class="peligro" hidden style="width:100%;margin-top:8px"></button>
+    <p class="nota">Para sacar un punto mal cargado: la <strong>&times;</strong> de su fila, o el bot&oacute;n <em>Quitar este punto</em> del globo en el mapa. Se quita de ac&aacute; nada m&aacute;s; el registro que mand&oacute; el t&eacute;cnico no se toca.</p>
 
     <h2>Exportar lo filtrado</h2>
     <div class="botonera">

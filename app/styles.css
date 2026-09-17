@@ -28,13 +28,16 @@ html { -webkit-text-size-adjust: 100%; }
    Es lo unico que se ve al entrar por el link. Viene visible desde el HTML
    y se esconde sola si la app ya esta instalada. */
 
-#portadaInstalacion {
+#portadaInstalacion,
+#yaInstaladaAviso {
   position: fixed;
   inset: 0;
   z-index: 100;
   background: var(--verde);
   color: #fff;
-  display: flex;
+  /* Ocultas por defecto: el script del encabezado decide cual se muestra.
+     Si el script no llega a correr, no se tapa nada y la app funciona. */
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -43,9 +46,25 @@ html { -webkit-text-size-adjust: 100%; }
   overflow-y: auto;
   padding: 30px 22px calc(26px + env(safe-area-inset-bottom, 0px));
 }
-/* [hidden] tiene que ganarle al display:flex de arriba */
+html.estado-portada #portadaInstalacion { display: flex; }
+html.estado-instalada #yaInstaladaAviso { display: flex; }
+/* Cerrar una pantalla le gana a cualquier estado */
 #portadaInstalacion[hidden],
-html.sin-portada #portadaInstalacion { display: none; }
+#yaInstaladaAviso[hidden] { display: none !important; }
+
+#yaInstaladaAviso .tilde {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px; line-height: 1;
+}
+.icono-muestra {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: rgba(255, 255, 255, .13); border-radius: 16px; padding: 16px 26px;
+}
+.icono-muestra img { width: 58px; height: 58px; border-radius: 13px; }
+.icono-muestra span { font-size: 13px; font-weight: 600; }
+.portada-bajada.chica { font-size: 14px; opacity: .8; }
 
 .portada-logo { width: 88px; height: 88px; border-radius: 20px; }
 .portada-titulo { font-size: 25px; margin: 0; font-weight: 700; letter-spacing: .2px; }

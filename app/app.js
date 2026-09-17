@@ -687,23 +687,54 @@
   // captura, donde se ve al abrir la app por primera vez, y en Ayuda, para
   // quien lo cerro y despues quiere instalarla igual.
   var CLAVE_OMITIR_PORTADA = 'tucuras.portada.omitir';
+  var CLAVE_INSTALADA = 'tucuras.instalada';
 
-  // La portada arranca visible desde el HTML. El script del encabezado ya
-  // decidio si hay que saltearla; aca solo terminamos de acomodar el estado.
-  function portadaVisible() {
-    return !document.documentElement.classList.contains('sin-portada') &&
-           !$('portadaInstalacion').hidden;
+  // El script del encabezado ya dejo escrito el estado inicial; aca solo lo
+  // leemos y lo terminamos de aplicar.
+  function estado_() {
+    var c = document.documentElement.classList;
+    if (c.contains('estado-portada')) return 'portada';
+    if (c.contains('estado-instalada')) return 'instalada';
+    return 'app';
+  }
+
+  // Deja pasar a la app: esconde la pantalla que este tapando y recien ahi
+  // arranca el GPS. Nadie quiere que el telefono pregunte por la ubicacion
+  // antes de haber entrado siquiera a la aplicacion.
+  function entrarALaApp() {
+    $('portadaInstalacion').hidden = true;
+    $('yaInstaladaAviso').hidden = true;
+    document.documentElement.classList.remove('estado-portada', 'estado-instalada');
+    document.documentElement.classList.add('estado-app');
+    document.body.classList.remove('con-portada');
+    iniciarGps();
   }
 
   function cerrarPortada(recordar) {
     if (recordar) {
       try { localStorage.setItem(CLAVE_OMITIR_PORTADA, '1'); } catch (e) { /* sin espacio */ }
     }
+    entrarALaApp();
+  }
+
+  // Salida de emergencia del aviso "ya esta instalada": si alguien la
+  // desinstalo, o el navegador se equivoco, no puede quedar encerrado.
+  function noLaTengoInstalada() {
+    try {
+      localStorage.removeItem(CLAVE_INSTALADA);
+      localStorage.setItem(CLAVE_OMITIR_PORTADA, '1');
+    } catch (e) { /* almacenamiento bloqueado */ }
+    entrarALaApp();
+    brindis('Listo, podes usarla desde el navegador', 4000);
+  }
+
+  // Tras instalar, esta pestaña deja de ser el lugar de trabajo.
+  function mostrarYaInstalada() {
     $('portadaInstalacion').hidden = true;
-    document.body.classList.remove('con-portada');
-    // Recien ahora pedimos la ubicacion: nadie quiere que el telefono pregunte
-    // por el GPS antes de haber entrado siquiera a la aplicacion.
-    iniciarGps();
+    $('yaInstaladaAviso').hidden = false;
+    document.documentElement.classList.remove('estado-portada', 'estado-app');
+    document.documentElement.classList.add('estado-instalada');
+    document.body.classList.add('con-portada');
   }
 
   function montarInstalacion() {
@@ -720,24 +751,19 @@
       $('estadoInstalacion').innerHTML = '<strong>La app ya esta instalada en este telefono.</strong>';
     }
 
+    // Recien instalada: esta pestaña del navegador ya no es donde se trabaja.
     document.addEventListener('tucuras:instalada', function () {
       $('estadoInstalacion').innerHTML = '<strong>La app ya esta instalada en este telefono.</strong>';
-      if (portadaVisible()) {
-        // Se instalo desde la portada: la app ya quedo en la pantalla de
-        // inicio, asi que dejamos pasar a quien sigue en el navegador.
-        cerrarPortada(false);
-        brindis('App instalada. De ahora en mas abrila desde el icono', 5000);
-      } else {
-        brindis('App instalada. Ya podes abrirla desde el icono', 4500);
-      }
+      mostrarYaInstalada();
     });
   }
 
   /* ================== Arranque ================== */
 
   function conectar() {
-    // Portada de instalacion
+    // Pantallas de instalacion
     $('btnSinInstalar').addEventListener('click', function () { cerrarPortada(true); });
+    $('btnNoLaTengo').addEventListener('click', noLaTengoInstalada);
 
     // Pestañas
     document.querySelectorAll('nav.pestanas button').forEach(function (b) {
@@ -837,11 +863,12 @@
     actualizarGlobo();
     montarInstalacion();
 
-    if (portadaVisible()) {
-      document.body.classList.add('con-portada');
-    } else {
+    if (estado_() === 'app') {
       $('portadaInstalacion').hidden = true;
+      $('yaInstaladaAviso').hidden = true;
       iniciarGps();
+    } else {
+      document.body.classList.add('con-portada');
     }
 
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

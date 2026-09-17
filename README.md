@@ -52,7 +52,7 @@ Al abrir el link **lo único que aparece es la instalación**. Nada más: ni men
 
 Abajo hay un **Continuar sin instalar** discreto, para que nadie quede trabado: quien lo toca entra a la app y no vuelve a ver la pantalla.
 
-Una vez instalada, la pantalla no aparece nunca más: abrir el link lleva derecho a la cámara. Lo mismo al abrir desde el ícono.
+**Una vez instalada, la app se opera sólo desde el ícono del teléfono.** Si se vuelve a abrir el link en el navegador, la pantalla avisa que ya está instalada y no deja trabajar desde ahí: tener dos copias abiertas confunde, y sólo la instalada es la que guarda los registros y funciona sin señal. Por si alguien la desinstala, esa misma pantalla tiene un acceso discreto para volver a usarla en el navegador.
 
 La app queda con ícono propio y **abre sin internet**. En la meseta esto es lo importante: el GPS del teléfono funciona aunque no haya señal de datos.
 
@@ -118,6 +118,18 @@ Si el mismo punto llega por varias vías —la foto y el texto, por ejemplo— s
 - Filtros por zona, estadio, nivel de densidad, rango de fechas y texto libre
 - Resumen: puntos relevados, cuántos superan el umbral, densidad máxima, zonas afectadas, superficie declarada
 - Exportación a **CSV** (punto y coma, listo para Excel en castellano), **GeoJSON** (QGIS) y **KML** (Google Earth, Google My Maps)
+- **Quitar puntos mal cargados**: con la × de su fila, con el botón del globo en el mapa, o marcando varios con la casilla
+
+## Integración con el Sistema de Consulta Integral de Productores
+
+Este visor sirve para armar el mapa de una jornada y exportarlo. Para el **registro provincial que se acumula campaña tras campaña**, los mismos partes se cargan en el Sistema de Consulta Integral de Productores (botón **🦗 Tucuras**), que además:
+
+- **Cruza cada foco contra el parcelario del catastro**: RENSPA, establecimiento, departamento y productor identificado, con salto directo a su ficha completa
+- Guarda los focos en una base propia que sobrevive a las actualizaciones de datos
+- Separa las campañas (el ciclo de la tucura va de julio a junio) y permite **reproducir el avance** de los focos a lo largo de la temporada
+- Borra puntos de forma reversible, con papelera que registra quién los sacó y por qué
+
+Acepta exactamente las mismas entradas que este visor: el chat exportado, las fotos, el CSV y el GeoJSON.
 
 Los colores son los mismos en la app, en la marca de agua de la foto y en el mapa:
 

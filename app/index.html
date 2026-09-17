@@ -14,21 +14,30 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
 <script>
-  /* La portada de instalacion viene visible en el HTML para que nunca se vea
-     la app un instante antes de taparla. Aca decidimos, antes de pintar
-     nada, si hay que saltearla: app instalada, o el usuario ya eligio
-     seguir sin instalar. */
+  /* Decidimos en que estado arranca la pantalla ANTES de pintar nada, para
+     que nunca se vea la app un instante y despues se tape.
+
+     Tres estados posibles:
+       app       - se opera normalmente (es la app instalada, o alguien que
+                   eligio seguir sin instalar)
+       portada   - entro por el link y todavia no la instalo
+       instalada - ya la instalo, pero esto es la pestaña del navegador:
+                   se avisa y no se deja operar, para no trabajar por
+                   duplicado en dos lugares distintos */
   (function () {
-    var salteo = false;
+    var enLaApp = false, instalada = false, omitio = false;
     try {
-      salteo = window.matchMedia('(display-mode: standalone)').matches ||
-               window.matchMedia('(display-mode: fullscreen)').matches ||
-               window.matchMedia('(display-mode: minimal-ui)').matches ||
-               window.navigator.standalone === true ||
-               localStorage.getItem('tucuras.instalada') === '1' ||
-               localStorage.getItem('tucuras.portada.omitir') === '1';
-    } catch (e) { /* almacenamiento bloqueado: mostramos la portada */ }
-    if (salteo) document.documentElement.className += ' sin-portada';
+      enLaApp = window.matchMedia('(display-mode: standalone)').matches ||
+                window.matchMedia('(display-mode: fullscreen)').matches ||
+                window.matchMedia('(display-mode: minimal-ui)').matches ||
+                window.navigator.standalone === true ||
+                document.referrer.indexOf('android-app://') === 0;
+      instalada = localStorage.getItem('tucuras.instalada') === '1';
+      omitio = localStorage.getItem('tucuras.portada.omitir') === '1';
+    } catch (e) { /* almacenamiento bloqueado: se muestra la portada */ }
+
+    var estado = enLaApp ? 'app' : (instalada ? 'instalada' : (omitio ? 'app' : 'portada'));
+    document.documentElement.className += ' estado-' + estado;
   })();
 </script>
 </head>
@@ -44,6 +53,19 @@
   <p class="portada-bajada">Instal&aacute; la aplicaci&oacute;n en el tel&eacute;fono.<br>Despu&eacute;s abr&iacute;s con el &iacute;cono y funciona sin se&ntilde;al en el campo.</p>
   <div id="portadaAccion"></div>
   <button class="portada-saltear" id="btnSinInstalar">Continuar sin instalar</button>
+</section>
+
+<!-- Ya instalada, pero abierta desde el navegador: no se opera desde aca -->
+<section id="yaInstaladaAviso">
+  <div class="tilde">&#10003;</div>
+  <h1 class="portada-titulo">Ya est&aacute; instalada</h1>
+  <p class="portada-bajada">Cerr&aacute; esta pesta&ntilde;a y abr&iacute; la aplicaci&oacute;n desde el &iacute;cono del tel&eacute;fono.</p>
+  <div class="icono-muestra">
+    <img src="icons/icon-192.png" alt="">
+    <span>Tucuras</span>
+  </div>
+  <p class="portada-bajada chica">Se trabaja siempre desde ah&iacute;: es la que guarda tus registros y la que funciona sin se&ntilde;al en el campo.</p>
+  <button class="portada-saltear" id="btnNoLaTengo">No la tengo instalada, usar ac&aacute;</button>
 </section>
 
 <header>

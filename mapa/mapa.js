@@ -10,7 +10,8 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var registros = [];      // todos los puntos cargados
-  var capas = {};          // id -> marcador de Leaflet
+  var capas = {};          // clave -> marcador de Leaflet
+  var seleccion = {};      // claves marcadas para quitar
   var mapa, grupo;
 
   /* ================== Mapa ================== */
@@ -92,8 +93,47 @@
       return '<tr><th>' + x[0] + '</th><td>' + esc(x[1]) + '</td></tr>';
     }).join('') + '</table>';
     html += '<a href="https://www.google.com/maps?q=' + f.lat + ',' + f.lon +
-      '" target="_blank" rel="noopener">Abrir en Google Maps</a></div>';
+      '" target="_blank" rel="noopener">Abrir en Google Maps</a>';
+    html += '<button class="borrar-punto" data-clave="' + esc(r.clave) + '">Quitar este punto</button>';
+    html += '</div>';
     return html;
+  }
+
+  /* ---- Borrado de puntos mal cargados ---- */
+
+  function borrarPunto(clave, preguntar) {
+    var i = -1;
+    for (var k = 0; k < registros.length; k++) {
+      if (registros[k].clave === clave) { i = k; break; }
+    }
+    if (i === -1) return false;
+    var r = registros[i];
+    if (preguntar && !confirm('Quitar el punto ' + r.id + '?\n\n' +
+        'Se saca de este mapa. El registro original que mando el tecnico no se toca.')) {
+      return false;
+    }
+    if (r.urlFoto) URL.revokeObjectURL(r.urlFoto);
+    registros.splice(i, 1);
+    refrescarOpcionesFiltro();
+    dibujar();
+    aviso('Se quito el punto ' + r.id + '. Quedan ' + registros.length + '.', 'info');
+    return true;
+  }
+
+  function borrarSeleccionados() {
+    var claves = Object.keys(seleccion);
+    if (!claves.length) return;
+    if (!confirm('Quitar los ' + claves.length + ' punto(s) marcados?\n\n' +
+        'Se sacan de este mapa. Los registros originales no se tocan.')) return;
+    registros = registros.filter(function (r) {
+      if (!seleccion[r.clave]) return true;
+      if (r.urlFoto) URL.revokeObjectURL(r.urlFoto);
+      return false;
+    });
+    seleccion = {};
+    refrescarOpcionesFiltro();
+    dibujar();
+    aviso(claves.length + ' punto(s) quitado(s). Quedan ' + registros.length + '.', 'info');
   }
 
   function esc(s) {
@@ -112,11 +152,12 @@
       var nivel = T.nivelDensidad(d);
       var m = L.circleMarker([r.lat, r.lon], {
         radius: radio(d),
-        color: '#ffffff', weight: 2,
+        color: seleccion[r.clave] ? '#cf2d2d' : '#ffffff',
+        weight: seleccion[r.clave] ? 4 : 2,
         fillColor: nivel.color, fillOpacity: 0.85
       }).bindPopup(popup(r), { maxWidth: 320 });
       m.addTo(grupo);
-      capas[r.id] = m;
+      capas[r.clave] = m;
     });
 
     renderTabla(visibles);
@@ -204,20 +245,46 @@
       var nivel = T.nivelDensidad(d);
       var tr = document.createElement('tr');
       tr.innerHTML =
+        '<td class="sel"><input type="checkbox"' + (seleccion[r.clave] ? ' checked' : '') + '></td>' +
         '<td><span class="punto" style="background:' + nivel.color + '"></span>' + esc(r.id) + '</td>' +
         '<td>' + esc((r.fecha || '').replace('T', ' ').slice(0, 16)) + '</td>' +
         '<td>' + esc(r.zona || '') + '</td>' +
         '<td>' + esc(T.nombrePorCod(T.ESTADIOS, r.estadio)) + '</td>' +
         '<td class="num">' + (d != null ? d : '') + '</td>' +
-        '<td class="mono">' + T.coord(r.lat) + ', ' + T.coord(r.lon) + '</td>';
+        '<td class="mono">' + T.coord(r.lat) + ', ' + T.coord(r.lon) + '</td>' +
+        '<td class="sel"><button class="quitar" title="Quitar este punto">&times;</button></td>';
+
+      tr.querySelector('input[type=checkbox]').onclick = function (e) {
+        e.stopPropagation();
+        if (this.checked) seleccion[r.clave] = true; else delete seleccion[r.clave];
+        pintarBarraSeleccion();
+        if (capas[r.clave]) {
+          capas[r.clave].setStyle({
+            color: this.checked ? '#cf2d2d' : '#ffffff',
+            weight: this.checked ? 4 : 2
+          });
+        }
+      };
+      tr.querySelector('button.quitar').onclick = function (e) {
+        e.stopPropagation();
+        borrarPunto(r.clave, true);
+      };
       tr.onclick = function () {
-        if (!capas[r.id]) return;
+        if (!capas[r.clave]) return;
         mapa.setView([r.lat, r.lon], 13);
-        capas[r.id].openPopup();
+        capas[r.clave].openPopup();
       };
       cuerpo.appendChild(tr);
     });
     $('conteoTabla').textContent = visibles.length + ' punto(s)';
+    pintarBarraSeleccion();
+  }
+
+  function pintarBarraSeleccion() {
+    var n = Object.keys(seleccion).length;
+    var b = $('btnBorrarSeleccion');
+    b.hidden = n === 0;
+    b.textContent = 'Quitar ' + n + ' punto(s) marcado(s)';
   }
 
   function renderResumen(visibles) {
@@ -728,6 +795,16 @@
       dibujar();
     });
 
+    // El boton de quitar vive dentro del globo de Leaflet, que se crea y se
+    // destruye solo: escuchamos el clic en el contenedor del mapa.
+    $('mapa').addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('.borrar-punto');
+      if (!b) return;
+      mapa.closePopup();
+      borrarPunto(b.dataset.clave, true);
+    });
+    $('btnBorrarSeleccion').addEventListener('click', borrarSeleccionados);
+
     $('btnCSV').addEventListener('click', function () { exportar('csv'); });
     $('btnGeo').addEventListener('click', function () { exportar('geojson'); });
     $('btnKML').addEventListener('click', function () { exportar('kml'); });
@@ -736,6 +813,7 @@
       if (!confirm('Quitar los ' + registros.length + ' punto(s) cargados?')) return;
       registros.forEach(function (r) { if (r.urlFoto) URL.revokeObjectURL(r.urlFoto); });
       registros = [];
+      seleccion = {};
       refrescarOpcionesFiltro();
       dibujar();
       aviso('Se vacio la sesion.', 'info');
