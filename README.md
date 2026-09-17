@@ -41,14 +41,22 @@ Después se le pasa el link a los técnicos por WhatsApp una sola vez.
 
 ### 2. Instalarla en el teléfono
 
-La app trae un **botón de instalación** arriba de todo. En Android y en Chrome de escritorio se instala de un toque; en iPhone, donde Apple no permite instalación automática, el mismo cartel muestra el paso a paso de Safari. El cartel desaparece solo una vez instalada, y sigue disponible en **Ayuda** para quien lo haya cerrado.
+Al abrir el link **lo único que aparece es la instalación**. Nada más: ni menús, ni pestañas, ni la cámara. La pantalla se adapta al teléfono:
 
-Si hiciera falta a mano:
+| Teléfono | Qué muestra |
+|---|---|
+| Android, Chrome de escritorio | Botón **Instalar la aplicación**: un toque y listo |
+| iPhone con Safari | Los tres pasos de Safari, numerados. Apple no permite instalar de un toque desde ninguna web |
+| iPhone con Chrome u otro | Aviso de que solo Safari puede instalar, con botón para copiar el link |
+| Otros navegadores | Dónde está la opción en el menú |
 
-- **Android (Chrome):** menú ⋮ → *Instalar aplicación*
-- **iPhone (Safari, obligatorio):** botón Compartir → *Agregar a inicio*
+Abajo hay un **Continuar sin instalar** discreto, para que nadie quede trabado: quien lo toca entra a la app y no vuelve a ver la pantalla.
 
-Queda con ícono propio y **abre sin internet**. En la meseta esto es lo importante: el GPS del teléfono funciona aunque no haya señal de datos.
+Una vez instalada, la pantalla no aparece nunca más: abrir el link lleva derecho a la cámara. Lo mismo al abrir desde el ícono.
+
+La app queda con ícono propio y **abre sin internet**. En la meseta esto es lo importante: el GPS del teléfono funciona aunque no haya señal de datos.
+
+El permiso de ubicación **se pide recién al entrar a la app**, no en la pantalla de instalación: nadie quiere que el teléfono pregunte por el GPS antes de haber entrado siquiera.
 
 ### 3. Configurar una vez, en Ajustes
 
@@ -146,7 +154,7 @@ El `1` es la versión del formato. Los códigos (`BC`, `SAL`, `ARO`, `MAL`) est�
 index.html                  Raíz: lleva directo a la app de campo
 
 app/                        Aplicación de campo (PWA)
-  index.html                Pantallas: Capturar, Registros, Ajustes, Ayuda
+  index.html                Portada de instalación + Capturar, Registros, Ajustes, Ayuda
   app.js                    Lógica: GPS, cámara, marca de agua, envío
   datos.js                  Vocabularios del Programa, IndexedDB, CSV/GeoJSON/KML
   exif.js                   Escritor de EXIF con GPS, sin dependencias

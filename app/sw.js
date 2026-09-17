@@ -4,7 +4,7 @@
    Estrategia: cache primero para los archivos propios, red como respaldo.
    ===================================================================== */
 
-var CACHE = 'tucuras-v2';
+var CACHE = 'tucuras-v3';
 
 var ARCHIVOS = [
   './',

@@ -100,7 +100,21 @@
     '.inst-pasos{margin:12px 0 0;padding-left:22px;font-size:14px;line-height:1.6}',
     '.inst-pasos li{margin-bottom:6px}',
     '.inst-pasos b{background:#e7f1ea;border-radius:5px;padding:1px 6px}',
-    '.inst-nota{font-size:13px;color:#5a655e;margin:10px 0 0}'
+    '.inst-nota{font-size:13px;color:#5a655e;margin:10px 0 0}',
+
+    /* Modo portada: la pantalla de bienvenida, sobre fondo verde */
+    '.inst-p-boton{width:100%;max-width:340px;min-height:62px;border:none;border-radius:14px;',
+    'background:#fff;color:#17201b;font:inherit;font-weight:700;font-size:19px;cursor:pointer;',
+    'display:flex;align-items:center;justify-content:center;gap:10px;',
+    'box-shadow:0 4px 16px rgba(0,0,0,.22)}',
+    '.inst-p-boton:active{transform:translateY(1px)}',
+    '.inst-p-pasos{text-align:left;margin:0;padding:0;list-style:none;max-width:340px;width:100%}',
+    '.inst-p-pasos li{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;font-size:16px;line-height:1.45}',
+    '.inst-p-pasos .num{flex:none;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);',
+    'display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}',
+    '.inst-p-pasos b{font-weight:700}',
+    '.inst-p-aviso{background:rgba(255,255,255,.14);border-radius:12px;padding:14px 16px;',
+    'max-width:340px;width:100%;font-size:15px;line-height:1.45}'
   ].join('');
 
   function inyectarCSS() {
@@ -196,10 +210,87 @@
     return c4;
   }
 
+  /* ---------------- modo portada ---------------- */
+
+  function pasos(lista) {
+    var ol = document.createElement('ol');
+    ol.className = 'inst-p-pasos';
+    lista.forEach(function (texto, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + texto + '</span>';
+      ol.appendChild(li);
+    });
+    return ol;
+  }
+
+  // La pantalla de bienvenida: solo la accion de instalar, sin nada mas.
+  function accionPortada() {
+    var frag = document.createDocumentFragment();
+
+    // Android y escritorio: instalacion con un toque.
+    if (eventoInstalacion) {
+      var b = document.createElement('button');
+      b.className = 'inst-p-boton';
+      b.innerHTML = '<span>&#11015;</span> Instalar la aplicación';
+      b.onclick = instalarConUnToque;
+      frag.appendChild(b);
+      return frag;
+    }
+
+    // iPhone con Safari: Apple no permite instalar de un toque desde la web,
+    // solo queda mostrar el camino.
+    if (esSafariIOS()) {
+      frag.appendChild(pasos([
+        'Tocá el botón <b>Compartir</b>, abajo al centro de la pantalla.',
+        'Deslizá hacia abajo y elegí <b>Agregar a inicio</b>.',
+        'Tocá <b>Agregar</b>, arriba a la derecha.'
+      ]));
+      return frag;
+    }
+
+    // iPhone con otro navegador: hay que pasar a Safari.
+    if (esIOS()) {
+      var aviso = document.createElement('div');
+      aviso.className = 'inst-p-aviso';
+      aviso.innerHTML = 'En iPhone, solo <b>Safari</b> puede instalar la aplicación. ' +
+        'Copiá el link y abrilo con Safari.';
+      frag.appendChild(aviso);
+      var bc = document.createElement('button');
+      bc.className = 'inst-p-boton';
+      bc.style.marginTop = '14px';
+      bc.textContent = 'Copiar el link';
+      bc.onclick = function () {
+        var url = location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () {
+            bc.textContent = 'Link copiado';
+          }).catch(function () { prompt('Copiá este link y abrilo en Safari:', url); });
+        } else {
+          prompt('Copiá este link y abrilo en Safari:', url);
+        }
+      };
+      frag.appendChild(bc);
+      return frag;
+    }
+
+    // Otros navegadores: no hay evento de instalacion, se explica el menu.
+    var d = document.createElement('div');
+    d.className = 'inst-p-aviso';
+    d.innerHTML = 'Abrí el menú del navegador y elegí <b>Instalar aplicación</b> ' +
+      'o <b>Agregar a pantalla principal</b>.<br><br>Con <b>Chrome</b> se instala de un solo toque.';
+    frag.appendChild(d);
+    return frag;
+  }
+
   function pintar() {
     inyectarCSS();
     montajes.forEach(function (m) {
       m.el.innerHTML = '';
+      if (m.portada) {
+        // La portada la muestra y la esconde app.js; aca solo va la accion.
+        if (!yaInstalada()) m.el.appendChild(accionPortada());
+        return;
+      }
       if (yaInstalada()) return;
       if (oculto() && !m.ignorarDescarte) return;
       m.el.appendChild(contenido(!m.ignorarDescarte));
@@ -215,10 +306,15 @@
   function montar(el, opciones) {
     var nodo = typeof el === 'string' ? document.getElementById(el) : el;
     if (!nodo) return;
+    var op = {
+      el: nodo,
+      ignorarDescarte: !!(opciones && opciones.ignorarDescarte),
+      portada: !!(opciones && opciones.portada)
+    };
     for (var i = 0; i < montajes.length; i++) {
-      if (montajes[i].el === nodo) { montajes[i].ignorarDescarte = !!(opciones && opciones.ignorarDescarte); pintar(); return; }
+      if (montajes[i].el === nodo) { montajes[i] = op; pintar(); return; }
     }
-    montajes.push({ el: nodo, ignorarDescarte: !!(opciones && opciones.ignorarDescarte) });
+    montajes.push(op);
     pintar();
     // Algunos navegadores tardan en decidir si la app es instalable.
     setTimeout(pintar, 1500);

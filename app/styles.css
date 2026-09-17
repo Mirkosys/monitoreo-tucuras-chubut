@@ -24,6 +24,53 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+/* ---------- Portada de instalacion ----------
+   Es lo unico que se ve al entrar por el link. Viene visible desde el HTML
+   y se esconde sola si la app ya esta instalada. */
+
+#portadaInstalacion {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--verde);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  overflow-y: auto;
+  padding: 30px 22px calc(26px + env(safe-area-inset-bottom, 0px));
+}
+/* [hidden] tiene que ganarle al display:flex de arriba */
+#portadaInstalacion[hidden],
+html.sin-portada #portadaInstalacion { display: none; }
+
+.portada-logo { width: 88px; height: 88px; border-radius: 20px; }
+.portada-titulo { font-size: 25px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+.portada-sub { margin: 4px 0 0; font-size: 13px; opacity: .82; }
+.portada-bajada { margin: 0; font-size: 16px; line-height: 1.5; max-width: 340px; opacity: .95; }
+#portadaAccion { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+.portada-saltear {
+  background: none;
+  border: none;
+  color: #fff;
+  opacity: .72;
+  text-decoration: underline;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 44px;
+  width: auto;
+  cursor: pointer;
+  padding: 10px 16px;
+}
+.portada-saltear:hover { opacity: 1; }
+
+/* Mientras la portada esta a la vista no se scrollea lo de atras */
+body.con-portada { overflow: hidden; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

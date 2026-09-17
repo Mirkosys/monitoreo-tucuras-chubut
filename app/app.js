@@ -686,10 +686,31 @@
   // El cartel de instalacion va en dos lugares: arriba de la pantalla de
   // captura, donde se ve al abrir la app por primera vez, y en Ayuda, para
   // quien lo cerro y despues quiere instalarla igual.
+  var CLAVE_OMITIR_PORTADA = 'tucuras.portada.omitir';
+
+  // La portada arranca visible desde el HTML. El script del encabezado ya
+  // decidio si hay que saltearla; aca solo terminamos de acomodar el estado.
+  function portadaVisible() {
+    return !document.documentElement.classList.contains('sin-portada') &&
+           !$('portadaInstalacion').hidden;
+  }
+
+  function cerrarPortada(recordar) {
+    if (recordar) {
+      try { localStorage.setItem(CLAVE_OMITIR_PORTADA, '1'); } catch (e) { /* sin espacio */ }
+    }
+    $('portadaInstalacion').hidden = true;
+    document.body.classList.remove('con-portada');
+    // Recien ahora pedimos la ubicacion: nadie quiere que el telefono pregunte
+    // por el GPS antes de haber entrado siquiera a la aplicacion.
+    iniciarGps();
+  }
+
   function montarInstalacion() {
     var I = window.InstalarApp;
     if (!I) return;
 
+    I.montar('portadaAccion', { portada: true });
     // Arriba de la pantalla de captura: se puede cerrar y no vuelve a molestar.
     I.montar('cajaInstalar');
     // En Ayuda: siempre visible, para quien lo cerro y despues se arrepiente.
@@ -701,13 +722,23 @@
 
     document.addEventListener('tucuras:instalada', function () {
       $('estadoInstalacion').innerHTML = '<strong>La app ya esta instalada en este telefono.</strong>';
-      brindis('App instalada. Ya podes abrirla desde el icono', 4500);
+      if (portadaVisible()) {
+        // Se instalo desde la portada: la app ya quedo en la pantalla de
+        // inicio, asi que dejamos pasar a quien sigue en el navegador.
+        cerrarPortada(false);
+        brindis('App instalada. De ahora en mas abrila desde el icono', 5000);
+      } else {
+        brindis('App instalada. Ya podes abrirla desde el icono', 4500);
+      }
     });
   }
 
   /* ================== Arranque ================== */
 
   function conectar() {
+    // Portada de instalacion
+    $('btnSinInstalar').addEventListener('click', function () { cerrarPortada(true); });
+
     // Pestañas
     document.querySelectorAll('nav.pestanas button').forEach(function (b) {
       b.addEventListener('click', function () { mostrarPantalla(b.dataset.pantalla); });
@@ -803,9 +834,15 @@
 
     cargarAjustes();
     conectar();
-    iniciarGps();
     actualizarGlobo();
     montarInstalacion();
+
+    if (portadaVisible()) {
+      document.body.classList.add('con-portada');
+    } else {
+      $('portadaInstalacion').hidden = true;
+      iniciarGps();
+    }
 
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('sw.js').catch(function () { /* sin modo offline */ });
