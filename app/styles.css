@@ -119,24 +119,44 @@ header {
 .titulo .sub { font-size: 12px; opacity: .85; margin: 0; }
 .titulo img { width: 30px; height: 30px; border-radius: 7px; }
 
-/* Chip de estado del GPS */
+/* Estado del GPS: la lectura y el botón de volver a buscarla */
 .gps {
-  display: flex; align-items: center; gap: 8px;
-  margin-top: 9px; padding: 9px 12px;
+  margin-top: 9px; padding: 10px 12px;
   background: rgba(255, 255, 255, .13);
-  border-radius: 10px; font-size: 14px;
-  cursor: pointer;
+  border-radius: 12px;
 }
+.gps-lectura { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; }
 .gps .punto {
-  width: 11px; height: 11px; border-radius: 50%;
+  width: 13px; height: 13px; border-radius: 50%;
   background: var(--ambar); flex: none;
   animation: latir 1.6s ease-in-out infinite;
 }
 .gps.ok .punto { background: #6ee7a0; animation: none; }
 .gps.malo .punto { background: #ff8a8a; animation: none; }
 .gps .txt { flex: 1; min-width: 0; }
-.gps .recargar { font-size: 12px; opacity: .9; text-decoration: underline; white-space: nowrap; }
+
+/* Es el botón al que más se recurre a campo cuando la lectura sale mal:
+   tiene que poder tocarse sin apuntar, con la mano sucia y con guantes. */
+.gps-boton {
+  width: 100%; margin-top: 10px; min-height: 50px;
+  background: rgba(255, 255, 255, .22);
+  color: #fff; border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 11px; font-size: 16px; font-weight: 700;
+}
+.gps-boton:active { background: rgba(255, 255, 255, .34); }
+.gps-boton .icono { font-size: 19px; }
 @keyframes latir { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* Aviso de fotos sacadas y todavía sin enviar */
+.pendientes {
+  background: #fff; border: 1px solid var(--borde);
+  border-left: 5px solid var(--ambar);
+  border-radius: var(--radio); padding: 14px; margin-bottom: 14px;
+  box-shadow: var(--sombra);
+}
+.pendientes strong { display: block; font-size: 16px; }
+.pendientes .nota { margin: 4px 0 0; }
+.pendientes button { margin-top: 12px; }
 
 /* ---------- Contenedores ---------- */
 

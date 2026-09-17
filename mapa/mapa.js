@@ -547,7 +547,21 @@
 
   function procesarFoto(file) {
     return window.ExifReader.readExifFromFile(file).then(function (ex) {
-      if (!ex || ex.lat == null || ex.lon == null) return { ok: false, nombre: file.name };
+      // Sin EXIF util: probamos la tira grabada en los pixeles, que es lo
+      // unico que sobrevive cuando WhatsApp manda la imagen recomprimida.
+      if (!ex || ex.lat == null || ex.lon == null) {
+        if (!window.CodigoOptico) return { ok: false, nombre: file.name };
+        return window.CodigoOptico.leerArchivo(file).then(function (punto) {
+          if (!punto) return { ok: false, nombre: file.name };
+          var r = vacio();
+          r.lat = punto.lat;
+          r.lon = punto.lon;
+          r.fecha = punto.fecha ? punto.fecha + 'T12:00:00' : '';
+          r.observaciones = 'Ubicacion leida de la tira grabada en la foto';
+          r.urlFoto = URL.createObjectURL(file);
+          return { ok: true, nuevo: agregar(r, 'foto (tira): ' + file.name), nombre: file.name };
+        });
+      }
 
       var r = null;
       // Si la foto salio de la app de campo, el registro entero viaja en el

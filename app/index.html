@@ -76,10 +76,14 @@
       <p class="sub">Chubut &middot; Programa Provincial MIP</p>
     </div>
   </div>
-  <div class="gps" id="chipGps" role="button" tabindex="0">
-    <span class="punto"></span>
-    <span class="txt" id="gpsTexto">Buscando ubicaci&oacute;n&hellip;</span>
-    <span class="recargar">Actualizar</span>
+  <div class="gps" id="chipGps">
+    <div class="gps-lectura">
+      <span class="punto"></span>
+      <span class="txt" id="gpsTexto">Buscando ubicaci&oacute;n&hellip;</span>
+    </div>
+    <button class="gps-boton" id="btnActualizarGps">
+      <span class="icono">&#8635;</span> Actualizar ubicaci&oacute;n
+    </button>
   </div>
 </header>
 
@@ -90,6 +94,8 @@
 
     <div id="cajaInstalar"></div>
 
+    <div id="cajaPendientes"></div>
+
     <div class="tarjeta" id="tarjetaCaptura">
       <button class="boton-camara" id="btnFoto">
         <span class="icono">&#128247;</span>
@@ -97,10 +103,7 @@
         <small>La ubicaci&oacute;n se guarda sola</small>
       </button>
       <input type="file" accept="image/*" capture="environment" id="entradaFoto" hidden>
-      <div class="fila" style="margin-top:10px">
-        <button class="secundario chico" id="btnGaleria" style="width:100%">Elegir foto de la galer&iacute;a</button>
-      </div>
-      <p class="nota">Sac&aacute; la foto parada sobre el foco. Sirve sin se&ntilde;al de datos: el GPS del tel&eacute;fono funciona igual.</p>
+      <p class="nota">Sac&aacute; la foto parada sobre el foco. <strong>No hace falta se&ntilde;al de celular</strong>: el GPS recibe de los sat&eacute;lites. Sin se&ntilde;al puede tardar hasta un par de minutos en enganchar, a cielo abierto y quieto.</p>
     </div>
 
     <!-- Ficha del registro, aparece despues de tomar la foto -->
@@ -177,21 +180,6 @@
     </div>
   </section>
 
-  <!-- ============ REGISTROS ============ -->
-  <section class="pantalla" id="pantallaRegistros">
-    <div class="tarjeta">
-      <h2>Registros guardados</h2>
-      <p class="nota" id="resumenRegistros">&nbsp;</p>
-      <div class="fila">
-        <button class="secundario chico" id="btnExportarCSV">Exportar CSV</button>
-        <button class="secundario chico" id="btnExportarGeo">GeoJSON</button>
-        <button class="secundario chico" id="btnExportarKML">KML</button>
-      </div>
-      <button class="whatsapp" id="btnResumenWA" style="margin-top:10px">Enviar resumen de pendientes por WhatsApp</button>
-    </div>
-    <div id="listaRegistros"></div>
-  </section>
-
   <!-- ============ AJUSTES ============ -->
   <section class="pantalla" id="pantallaAjustes">
     <div class="tarjeta">
@@ -204,32 +192,9 @@
     </div>
 
     <div class="tarjeta">
-      <h2>Destino de los env&iacute;os</h2>
-      <label for="aTelefono">WhatsApp de Sanidad Vegetal</label>
-      <input id="aTelefono" type="tel" inputmode="tel" placeholder="Ej.: 5492804123456">
-      <p class="nota">C&oacute;digo de pa&iacute;s + &aacute;rea sin 0 y sin 15. Para Chubut: <strong>549280&hellip;</strong> o <strong>5492945&hellip;</strong>. Si lo dej&aacute;s vac&iacute;o, al enviar vas a poder elegir el contacto a mano.</p>
-    </div>
-
-    <div class="tarjeta">
-      <h2>Foto</h2>
-      <label for="aTamano">Tama&ntilde;o m&aacute;ximo</label>
-      <select id="aTamano">
-        <option value="1280">1280 px &mdash; liviana, para se&ntilde;al mala</option>
-        <option value="1600">1600 px &mdash; recomendada</option>
-        <option value="2048">2048 px &mdash; m&aacute;s detalle</option>
-      </select>
-
-      <label style="display:flex;align-items:center;gap:10px;margin-top:16px">
-        <input type="checkbox" id="aMarca" style="width:auto;min-height:auto" checked>
-        <span>Escribir las coordenadas sobre la foto</span>
-      </label>
-      <p class="nota">Muy recomendable: WhatsApp borra los metadatos al enviar la imagen como foto, pero el texto sobre la imagen queda siempre.</p>
-    </div>
-
-    <div class="tarjeta">
       <h2>Mantenimiento</h2>
       <p class="nota" id="infoEspacio">&nbsp;</p>
-      <button class="peligro" id="btnBorrarEnviados">Borrar los registros ya enviados</button>
+      <button class="peligro" id="btnBorrarEnviados">Borrar las fotos ya enviadas</button>
     </div>
   </section>
 
@@ -242,8 +207,9 @@
         <li>Par&aacute;te sobre el foco, esper&aacute; el indicador verde y toc&aacute; <strong>Tomar foto del foco</strong>.</li>
         <li>Toc&aacute; <strong>Enviar por WhatsApp</strong>.</li>
       </ol>
-      <p class="nota">Sin se&ntilde;al, toc&aacute; <strong>Guardar para enviar despu&eacute;s</strong>. Los registros se acumulan en <strong>Registros</strong> y los mand&aacute;s todos juntos cuando volv&eacute;s al pueblo.</p>
-      <p class="nota">La app funciona igual sin se&ntilde;al de datos: el GPS del tel&eacute;fono es independiente de la se&ntilde;al de la compa&ntilde;&iacute;a.</p>
+      <p class="nota">Sin se&ntilde;al, toc&aacute; <strong>Guardar para enviar despu&eacute;s</strong>. Las fotos se acumulan y arriba de todo aparece un aviso con cu&aacute;ntas quedan sin enviar; cuando volv&eacute;s al pueblo las mand&aacute;s todas juntas de un toque.</p>
+      <p class="nota"><strong>El GPS no necesita se&ntilde;al de celular</strong>: recibe directo de los sat&eacute;lites. Sin se&ntilde;al el primer enganche tarda m&aacute;s &mdash; de medio minuto a un par de minutos, a cielo abierto y sin moverse. Si el indicador de arriba no se pone verde, toc&aacute; <strong>Actualizar ubicaci&oacute;n</strong> y esper&aacute; unos segundos.</p>
+      <p class="nota">Revis&aacute; una vez que el tel&eacute;fono tenga la ubicaci&oacute;n en <strong>Alta precisi&oacute;n</strong> (no en &laquo;ahorro de bater&iacute;a&raquo;): en modo ahorro se ubica por antenas y puede errarle por kil&oacute;metros.</p>
     </div>
 
     <div class="tarjeta">
@@ -256,7 +222,7 @@
       <h2 style="color:#cf2d2d">Importante al enviar por WhatsApp</h2>
       <p class="nota">WhatsApp <strong>borra los metadatos</strong> (incluida la ubicaci&oacute;n) cuando la imagen viaja como foto normal, porque la recomprime. Por eso cada registro sale por tres v&iacute;as al mismo tiempo:</p>
       <ol class="pasos">
-        <li><strong>Coordenadas escritas sobre la imagen</strong>: se ven siempre, aunque WhatsApp recomprima.</li>
+        <li><strong>Coordenadas escritas sobre la imagen</strong>, y una <strong>tira de cuadraditos</strong> en el borde de abajo que las guarda en los propios p&iacute;xeles. La oficina puede sacar el punto de la foto sola, aunque llegue sin el texto.</li>
         <li><strong>Texto del mensaje</strong>: WhatsApp nunca lo modifica. Ah&iacute; va la l&iacute;nea <code>#TUCURA|&hellip;</code> que lee el mapa.</li>
         <li><strong>Metadatos EXIF con GPS</strong>: sobreviven solo si el archivo se manda como <strong>Documento</strong>.</li>
       </ol>
@@ -276,19 +242,12 @@
       <p class="nota">Una vez instalada abre sin internet y queda con &iacute;cono propio, como cualquier otra aplicaci&oacute;n. Abrila una vez con se&ntilde;al antes de salir al campo: ah&iacute; se descarga entera.</p>
     </div>
 
-    <div class="tarjeta">
-      <h2>Para la oficina</h2>
-      <p class="nota">El mapa de focos se arma con las fotos y los mensajes que llegan por WhatsApp:</p>
-      <a class="boton secundario" href="../mapa/" target="_blank" rel="noopener">Abrir el mapa de focos</a>
-      <p class="nota">Conviene abrirlo en una computadora. Acepta el chat exportado de WhatsApp, las fotos, texto pegado y archivos CSV o GeoJSON.</p>
-    </div>
   </section>
 
 </main>
 
 <nav class="pestanas">
   <button data-pantalla="Capturar" class="activa"><span class="icono">&#128247;</span>Capturar</button>
-  <button data-pantalla="Registros"><span class="icono">&#128203;</span>Registros<span class="globo" id="globoPendientes" hidden></span></button>
   <button data-pantalla="Ajustes"><span class="icono">&#9881;</span>Ajustes</button>
   <button data-pantalla="Ayuda"><span class="icono">&#10067;</span>Ayuda</button>
 </nav>
@@ -297,6 +256,7 @@
 
 <script src="instalar.js"></script>
 <script src="exif.js"></script>
+<script src="codigo-optico.js"></script>
 <script src="datos.js"></script>
 <script src="app.js"></script>
 </body>

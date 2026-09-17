@@ -4,7 +4,7 @@
    Estrategia: cache primero para los archivos propios, red como respaldo.
    ===================================================================== */
 
-var CACHE = 'tucuras-v4';
+var CACHE = 'tucuras-v5';
 
 var ARCHIVOS = [
   './',
@@ -13,6 +13,7 @@ var ARCHIVOS = [
   './app.js',
   './datos.js',
   './exif.js',
+  './codigo-optico.js',
   './instalar.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

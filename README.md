@@ -25,6 +25,17 @@ Por eso cada registro viaja por **tres vías en paralelo**:
 
 Con que llegue cualquiera de las tres, el punto se ubica en el mapa. En la práctica la vía 2 funciona siempre.
 
+### La tira grabada en la imagen
+
+La marca de agua incluye una **tira fina de cuadrados blancos y negros** en el borde inferior. No es decorativa: guarda las **coordenadas y la fecha en los propios píxeles**, para que el software de mapeo pueda recuperar el punto **de la foto sola** — aunque WhatsApp la haya recomprimido y le haya borrado el EXIF, y aunque llegue sin el texto del mensaje.
+
+- 83 celdas a lo ancho de la imagen: 4 de sincronismo, 75 de datos (versión, latitud, longitud, fecha y verificación) y 4 de sincronismo
+- Precisión: 1·10⁻⁵ grados, poco más de un metro
+- Sobrevive porque WhatsApp **reescala pero no recorta ni rota**: la geometría relativa se mantiene, y los bloques son grandes comparados con el ruido del JPEG
+- Verificado hasta 800 px de ancho con calidad 0,35 (27 KB), y con cero falsos positivos sobre 200 fotos sin tira
+
+Es lo que hace que cargar sólo la imagen alcance. Ver [`app/codigo-optico.js`](app/codigo-optico.js).
+
 ---
 
 ## Puesta en marcha
@@ -60,9 +71,12 @@ El permiso de ubicación **se pide recién al entrar a la app**, no en la pantal
 
 ### 3. Configurar una vez, en Ajustes
 
+Sólo dos cosas, y ninguna obligatoria:
+
 - Nombre del monitoreador
 - Zona habitual (se completa sola en cada registro)
-- **Número de WhatsApp de Sanidad Vegetal**, con código de país y área, sin 0 y sin 15: `5492804123456`, `5492945123456`
+
+Todo lo demás está decidido por defecto y no se pregunta: la foto sale siempre al **máximo tamaño** (2048 px de lado mayor, ~200 KB) y **siempre con las coordenadas encima**. Al enviar, WhatsApp abre para elegir el contacto.
 
 ### 4. Abrir el mapa en la oficina
 
@@ -77,7 +91,16 @@ Con señal, son **dos toques**:
 1. Pararse sobre el foco, esperar el indicador **verde** y tocar **Tomar foto del foco**.
 2. Tocar **Enviar por WhatsApp**.
 
-Sin señal, el segundo toque es **Guardar para enviar después**. Los registros se acumulan y se mandan todos juntos al volver al pueblo.
+Sin señal, el segundo toque es **Guardar para enviar después**. Las fotos se acumulan y arriba de la pantalla aparece un aviso con cuántas quedan sin enviar; al volver al pueblo se mandan **todas juntas de un toque**.
+
+La app no tiene listados ni exportaciones: el técnico saca la foto y la manda, nada más. Todo lo que tiene que ver con archivos, formatos y mapas vive en la oficina.
+
+### El GPS no necesita señal de celular
+
+El chip recibe directo de los satélites y funciona en plena meseta sin una barra de señal. Dos cosas que sí importan:
+
+- **Sin datos, el primer arreglo tarda más.** Con señal el teléfono usa A‑GPS y engancha en segundos; sin señal tiene que leer la información de los propios satélites: de medio minuto a un par de minutos, a cielo abierto y quieto. Para eso está el botón grande **Actualizar ubicación**.
+- **El modo de ubicación tiene que estar en «Alta precisión».** En «ahorro de batería» el teléfono se ubica por antenas y wifi —eso sí necesita señal— y puede errarle por kilómetros.
 
 El registro guarda la **fecha y la posición del momento en que se sacó la foto**, no del momento del envío. Un relevamiento hecho el martes en Gan Gan y enviado el viernes desde Trelew se mapea igual, en Gan Gan y con fecha del martes. Esto era el requisito principal.
 
@@ -104,7 +127,7 @@ Se abre `mapa/index.html` y se le da de comer cualquiera de estas cosas, sueltas
 | Entrada | Cómo se consigue |
 |---|---|
 | **Chat exportado** (`_chat.txt`) | En WhatsApp: chat → ⋮ → *Más* → *Exportar chat* → *Sin archivos*. Es la vía más cómoda para procesar toda la campaña de una vez. |
-| **Fotos `.jpg`** | Las que llegaron como Documento, que conservan el GPS. También sirven fotos sacadas con la cámara común del teléfono con la ubicación activada. |
+| **Fotos `.jpg`** | Sirven las que llegaron como Documento (conservan el GPS en el EXIF), las de la cámara común con ubicación activada, **y también las recomprimidas por WhatsApp**: de esas el punto se recupera leyendo la tira grabada en la imagen. |
 | **Texto pegado** | Copiar los mensajes desde WhatsApp Web y pegarlos en el recuadro. |
 | **`.csv` / `.geojson`** | Exportados desde la app de campo o desde otra corrida del mapa. |
 
@@ -170,6 +193,7 @@ app/                        Aplicación de campo (PWA)
   app.js                    Lógica: GPS, cámara, marca de agua, envío
   datos.js                  Vocabularios del Programa, IndexedDB, CSV/GeoJSON/KML
   exif.js                   Escritor de EXIF con GPS, sin dependencias
+  codigo-optico.js          Tira que graba coordenadas y fecha en los píxeles
   instalar.js               Botón de instalación, según navegador y sistema
   styles.css                Alto contraste y botones grandes, para uso a sol pleno
   sw.js                     Service worker: la app abre sin señal

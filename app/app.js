@@ -12,14 +12,16 @@
     posicion: null,      // ultima lectura del GPS
     borrador: null,      // registro en edicion
     archivoOriginal: null,
-    urlPrevia: null,
-    urlsLista: []
+    urlPrevia: null
   };
 
+  // La foto sale siempre al maximo tamano y siempre con las coordenadas
+  // encima: no son decisiones que le toque tomar a alguien parado en el campo,
+  // y la marca de agua es lo unico que sobrevive si WhatsApp recomprime.
+  var LADO_MAXIMO = 2048;
+
   var AJUSTES_CLAVE = 'tucuras.ajustes.v1';
-  var ajustes = {
-    nombre: '', zona: '', telefono: '', tamano: '1600', marca: true
-  };
+  var ajustes = { nombre: '', zona: '' };
 
   /* ================== Ajustes ================== */
 
@@ -32,17 +34,11 @@
     } catch (e) { /* ajustes corruptos: seguimos con los valores por defecto */ }
     $('aNombre').value = ajustes.nombre;
     $('aZona').value = ajustes.zona;
-    $('aTelefono').value = ajustes.telefono;
-    $('aTamano').value = ajustes.tamano;
-    $('aMarca').checked = !!ajustes.marca;
   }
 
   function guardarAjustes() {
     ajustes.nombre = $('aNombre').value.trim();
     ajustes.zona = $('aZona').value.trim();
-    ajustes.telefono = $('aTelefono').value.replace(/[^\d]/g, '');
-    ajustes.tamano = $('aTamano').value;
-    ajustes.marca = $('aMarca').checked;
     try { localStorage.setItem(AJUSTES_CLAVE, JSON.stringify(ajustes)); } catch (e) { /* sin espacio */ }
   }
 
@@ -74,14 +70,13 @@
   }
 
   function mostrarPantalla(nombre) {
-    ['Capturar', 'Registros', 'Ajustes', 'Ayuda'].forEach(function (p) {
+    ['Capturar', 'Ajustes', 'Ayuda'].forEach(function (p) {
       $('pantalla' + p).classList.toggle('activa', p === nombre);
     });
     document.querySelectorAll('nav.pestanas button').forEach(function (b) {
       b.classList.toggle('activa', b.dataset.pantalla === nombre);
     });
     window.scrollTo(0, 0);
-    if (nombre === 'Registros') renderRegistros();
     if (nombre === 'Ajustes') mostrarEspacio();
   }
 
@@ -197,11 +192,19 @@
     if (d != null) l4.push(d + ' tucuras/m2');
     if (l4.length) lineas.push(l4.join('  -  '));
 
+    // Tira con las coordenadas grabadas en los píxeles, pegada al borde de
+    // abajo. Es lo único que sobrevive si la foto viaja por WhatsApp como
+    // imagen y llega a la oficina sin el texto del mensaje.
+    var altoTira = 0;
+    if (reg.lat != null && reg.lon != null && window.CodigoOptico) {
+      altoTira = window.CodigoOptico.dibujar(ctx, w, h, reg.lat, reg.lon, reg.fecha);
+    }
+
     var base = Math.max(13, Math.round(w * 0.026));
     var interlinea = Math.round(base * 1.38);
     var pad = Math.round(base * 0.8);
     var alto = pad * 2 + lineas.length * interlinea;
-    var y0 = h - alto;
+    var y0 = h - alto - altoTira;
     var fuente = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
     ctx.fillStyle = 'rgba(0,0,0,0.66)';
@@ -220,7 +223,7 @@
   }
 
   function procesarFoto(file, reg) {
-    var maxLado = parseInt(ajustes.tamano, 10) || 1600;
+    var maxLado = LADO_MAXIMO;
     return decodificar(file).then(function (img) {
       var w0 = img.width, h0 = img.height;
       var escala = Math.min(1, maxLado / Math.max(w0, h0));
@@ -233,7 +236,7 @@
       ctx.drawImage(img, 0, 0, w, h);
       if (img.close) img.close();
 
-      if (ajustes.marca) marcaDeAgua(ctx, w, h, reg);
+      marcaDeAgua(ctx, w, h, reg);
 
       return new Promise(function (res, rej) {
         lienzo.toBlob(function (blob) {
@@ -427,13 +430,12 @@
     }).then(function () {
       ocultarCargando();
       cerrarFicha();
-      actualizarGlobo();
+      pintarPendientes();
       if (enviarAhora) {
-        // Volvemos a Capturar: a campo lo normal es encadenar un foco tras otro.
+        // Quedamos en Capturar: a campo lo normal es encadenar un foco tras otro.
         enviarRegistro(reg);
       } else {
-        mostrarPantalla('Registros');
-        brindis('Registro ' + reg.id + ' guardado. Envialo cuando tengas senal', 4500);
+        brindis('Foto guardada. Te espera arriba para cuando tengas senal', 5000);
       }
     }).catch(function (e) {
       ocultarCargando();
@@ -447,10 +449,9 @@
     return new File([reg.foto], reg.id + '.jpg', { type: 'image/jpeg', lastModified: new Date(reg.fecha).getTime() });
   }
 
-  // Sin numero configurado, wa.me deja elegir el contacto a mano.
+  // Abre WhatsApp con el texto escrito; el tecnico elige el contacto.
   function enlaceWhatsApp(texto) {
-    var tel = (ajustes.telefono || '').replace(/[^\d]/g, '');
-    return 'https://wa.me/' + tel + '?text=' + encodeURIComponent(texto);
+    return 'https://wa.me/?text=' + encodeURIComponent(texto);
   }
 
   function descargar(blob, nombre) {
@@ -467,10 +468,7 @@
   function marcarEnviado(reg) {
     reg.enviado = true;
     reg.enviadoFecha = T.fechaISO(new Date());
-    return T.Store.guardar(reg).then(function () {
-      actualizarGlobo();
-      renderRegistros();
-    });
+    return T.Store.guardar(reg).then(pintarPendientes);
   }
 
   function enviarRegistro(reg) {
@@ -487,7 +485,7 @@
         .catch(function (e) {
           // Si el usuario cancela, el registro ya quedo guardado en Registros.
           if (e && e.name === 'AbortError') {
-            brindis('Envio cancelado. El registro quedo guardado en Registros', 4000);
+            brindis('Envio cancelado. La foto quedo guardada', 4000);
             return;
           }
           envioEnDosPasos(reg, texto);
@@ -504,179 +502,93 @@
     brindis('Foto descargada y WhatsApp abierto con el texto', 5000);
   }
 
-  function copiarTexto(reg) {
-    var texto = T.construirMensaje(reg);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(texto)
-        .then(function () { brindis('Texto copiado'); })
-        .catch(function () { alert(texto); });
-    } else {
-      alert(texto);
-    }
-  }
+  /* ================== Fotos pendientes de envio ==================
+     La pantalla de Registros se sacó a propósito: el técnico a campo no tiene
+     por qué lidiar con listados ni con formatos de archivo. Pero el envío
+     diferido sí hace falta -en la meseta muchas veces no hay señal-, así que
+     lo que queda es esto: un aviso con las fotos sacadas y todavía sin mandar,
+     y un botón para mandarlas. */
 
-  /* ================== Lista de registros ================== */
+  function pintarPendientes() {
+    return T.Store.todos().then(function (regs) {
+      var pend = regs.filter(function (r) { return !r.enviado; });
+      var caja = $('cajaPendientes');
+      caja.innerHTML = '';
+      if (!pend.length) return;
 
-  function limpiarUrlsLista() {
-    estado.urlsLista.forEach(function (u) { URL.revokeObjectURL(u); });
-    estado.urlsLista = [];
-  }
+      var div = document.createElement('div');
+      div.className = 'pendientes';
+      var sinGps = pend.filter(function (r) { return r.lat == null; }).length;
+      div.innerHTML =
+        '<strong>' + pend.length + (pend.length === 1 ? ' foto sin enviar' : ' fotos sin enviar') + '</strong>' +
+        '<p class="nota">Sacadas y guardadas en el telefono. Mandalas cuando tengas senal.' +
+        (sinGps ? ' <strong style="color:#cf2d2d">' + sinGps + ' sin ubicacion.</strong>' : '') + '</p>';
 
-  function renderRegistros() {
-    T.Store.todos().then(function (regs) {
-      limpiarUrlsLista();
-      var cont = $('listaRegistros');
-      cont.innerHTML = '';
-
-      var pendientes = regs.filter(function (r) { return !r.enviado; }).length;
-      var sinGps = regs.filter(function (r) { return r.lat == null; }).length;
-      $('resumenRegistros').innerHTML = regs.length === 0
-        ? 'Todavia no hay registros.'
-        : '<strong>' + regs.length + '</strong> registro(s), <strong>' + pendientes + '</strong> sin enviar' +
-          (sinGps ? ', <strong style="color:#cf2d2d">' + sinGps + ' sin ubicacion</strong>' : '');
-
-      $('btnExportarCSV').disabled = $('btnExportarGeo').disabled = $('btnExportarKML').disabled = regs.length === 0;
-      $('btnResumenWA').disabled = pendientes === 0;
-
-      if (!regs.length) {
-        cont.innerHTML = '<div class="tarjeta vacio">Sacale una foto al primer foco desde la pestana <strong>Capturar</strong>.</div>';
-        return;
-      }
-
-      regs.forEach(function (reg) {
-        var d = (reg.densidad === '' || reg.densidad == null) ? null : Number(reg.densidad);
-        var nivel = T.nivelDensidad(d);
-        var url = URL.createObjectURL(reg.foto);
-        estado.urlsLista.push(url);
-
-        var tarjeta = document.createElement('div');
-        tarjeta.className = 'tarjeta registro' + (reg.enviado ? ' enviado' : '');
-
-        var img = document.createElement('img');
-        img.src = url;
-        img.alt = 'Foto del registro ' + reg.id;
-        tarjeta.appendChild(img);
-
-        var cuerpo = document.createElement('div');
-        cuerpo.className = 'cuerpo';
-        var partes = [];
-        if (reg.zona) partes.push(reg.zona);
-        if (reg.estadio) partes.push(T.nombrePorCod(T.ESTADIOS, reg.estadio));
-        cuerpo.innerHTML =
-          '<div class="id">' + reg.id + (reg.enviado ? ' &#10003;' : '') + '</div>' +
-          '<div class="meta">' + T.fechaHora(new Date(reg.fecha)) + (partes.length ? ' &middot; ' + partes.join(' &middot; ') : '') + '</div>' +
-          '<div class="meta">' + (reg.lat != null
-            ? T.coord(reg.lat) + ', ' + T.coord(reg.lon)
-            : '<strong style="color:#cf2d2d">sin ubicacion</strong>') + '</div>' +
-          (d != null ? '<div style="margin-top:6px"><span class="etiqueta" style="background:' + nivel.color + '">' +
-            d + ' tucuras/m&sup2;</span></div>' : '');
-
-        var acciones = document.createElement('div');
-        acciones.className = 'acciones';
-
-        var bEnviar = document.createElement('button');
-        bEnviar.className = reg.enviado ? 'secundario' : 'whatsapp';
-        bEnviar.textContent = reg.enviado ? 'Reenviar' : 'Enviar';
-        bEnviar.onclick = function () { enviarRegistro(reg); };
-        acciones.appendChild(bEnviar);
-
-        var bDescargar = document.createElement('button');
-        bDescargar.className = 'secundario';
-        bDescargar.textContent = 'Descargar';
-        bDescargar.title = 'Guardar la foto con los metadatos GPS para enviarla como Documento';
-        bDescargar.onclick = function () {
-          descargar(reg.foto, reg.id + '.jpg');
-          brindis('Foto guardada. Mandala como Documento para conservar el GPS', 5000);
-        };
-        acciones.appendChild(bDescargar);
-
-        var bTexto = document.createElement('button');
-        bTexto.className = 'secundario';
-        bTexto.textContent = 'Copiar texto';
-        bTexto.onclick = function () { copiarTexto(reg); };
-        acciones.appendChild(bTexto);
-
-        var bBorrar = document.createElement('button');
-        bBorrar.className = 'peligro';
-        bBorrar.textContent = 'Borrar';
-        bBorrar.onclick = function () {
-          if (!confirm('Borrar el registro ' + reg.id + '? No se puede deshacer.')) return;
-          T.Store.borrar(reg.id).then(function () {
-            actualizarGlobo();
-            renderRegistros();
-            brindis('Registro borrado');
-          });
-        };
-        acciones.appendChild(bBorrar);
-
-        cuerpo.appendChild(acciones);
-        tarjeta.appendChild(cuerpo);
-        cont.appendChild(tarjeta);
-      });
+      var b = document.createElement('button');
+      b.className = 'whatsapp';
+      b.textContent = pend.length === 1 ? 'Enviar la foto' : 'Enviar las ' + pend.length + ' fotos';
+      b.onclick = function () { enviarPendientes(); };
+      div.appendChild(b);
+      caja.appendChild(div);
     });
   }
 
-  function actualizarGlobo() {
-    T.Store.todos().then(function (regs) {
-      var n = regs.filter(function (r) { return !r.enviado; }).length;
-      var g = $('globoPendientes');
-      g.textContent = n;
-      g.hidden = n === 0;
-    });
-  }
-
-  /* ================== Exportaciones y resumen ================== */
-
-  function exportar(tipo) {
-    T.Store.todos().then(function (regs) {
-      if (!regs.length) { brindis('No hay registros para exportar'); return; }
-      var hoy = new Date();
-      var sello = hoy.getFullYear() + T.dos(hoy.getMonth() + 1) + T.dos(hoy.getDate());
-      var contenido, nombre, mime;
-      if (tipo === 'csv') {
-        contenido = T.aCSV(regs); nombre = 'tucuras-' + sello + '.csv'; mime = 'text/csv;charset=utf-8';
-      } else if (tipo === 'geojson') {
-        contenido = T.aGeoJSON(regs); nombre = 'tucuras-' + sello + '.geojson'; mime = 'application/geo+json';
-      } else {
-        contenido = T.aKML(regs); nombre = 'tucuras-' + sello + '.kml'; mime = 'application/vnd.google-earth.kml+xml';
-      }
-      var blob = new Blob([contenido], { type: mime });
-      var archivo = new File([blob], nombre, { type: mime });
-      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
-        navigator.share({ files: [archivo], title: nombre }).catch(function () { descargar(blob, nombre); });
-      } else {
-        descargar(blob, nombre);
-      }
-    });
-  }
-
-  function resumenWhatsApp() {
+  // Se mandan todas juntas si el telefono lo permite; si no, de a una, que el
+  // tecnico repite tocando el boton de nuevo.
+  function enviarPendientes() {
     T.Store.todos().then(function (regs) {
       var pend = regs.filter(function (r) { return !r.enviado; });
-      if (!pend.length) { brindis('No hay registros sin enviar'); return; }
-      var L = ['MONITOREO DE TUCURAS - CHUBUT', 'Resumen de ' + pend.length + ' punto(s) relevado(s)'];
-      if (ajustes.nombre) L.push('Monitoreador: ' + ajustes.nombre);
-      L.push('');
-      pend.forEach(function (r) {
-        var d = (r.densidad === '' || r.densidad == null) ? null : Number(r.densidad);
-        L.push('- ' + r.id + ' | ' + T.fechaHora(new Date(r.fecha)) + ' | ' +
-          (r.lat != null ? T.coord(r.lat) + ', ' + T.coord(r.lon) : 'sin ubicacion') +
-          (r.zona ? ' | ' + r.zona : '') +
-          (d != null ? ' | ' + d + ' tucuras/m2' : ''));
-      });
-      L.push('');
-      L.push('Codigos para el mapa:');
-      pend.forEach(function (r) { L.push(T.lineaCodigo(r)); });
-      window.open(enlaceWhatsApp(L.join('\n')), '_blank');
+      if (!pend.length) return;
+
+      var archivos = pend.map(archivoDe);
+      var texto = pend.length === 1
+        ? T.construirMensaje(pend[0])
+        : mensajeDeVarios(pend);
+
+      if (navigator.canShare && navigator.canShare({ files: archivos })) {
+        navigator.share({ files: archivos, text: texto, title: 'Monitoreo de tucuras' })
+          .then(function () {
+            return Promise.all(pend.map(function (r) {
+              r.enviado = true;
+              r.enviadoFecha = T.fechaISO(new Date());
+              return T.Store.guardar(r);
+            }));
+          })
+          .then(function () {
+            pintarPendientes();
+            brindis(pend.length + ' foto(s) enviada(s)');
+          })
+          .catch(function (e) {
+            if (e && e.name === 'AbortError') return;
+            enviarRegistro(pend[0]);   // de a una
+          });
+        return;
+      }
+      enviarRegistro(pend[0]);
     });
+  }
+
+  function mensajeDeVarios(lista) {
+    var L = ['MONITOREO DE TUCURAS - CHUBUT',
+             lista.length + ' focos relevados'];
+    if (ajustes.nombre) L.push('Monitoreador: ' + ajustes.nombre);
+    L.push('');
+    lista.forEach(function (r) {
+      L.push(r.id + ' | ' + T.fechaHora(new Date(r.fecha)) + ' | ' +
+        (r.lat != null ? T.coord(r.lat) + ', ' + T.coord(r.lon) : 'sin ubicacion') +
+        (r.zona ? ' | ' + r.zona : ''));
+    });
+    L.push('');
+    lista.forEach(function (r) { L.push(T.lineaCodigo(r)); });
+    return L.join('\n');
   }
 
   function mostrarEspacio() {
     T.Store.todos().then(function (regs) {
       var bytes = regs.reduce(function (a, r) { return a + (r.tamanoFoto || 0); }, 0);
       var enviados = regs.filter(function (r) { return r.enviado; }).length;
-      $('infoEspacio').textContent = regs.length + ' registro(s) guardado(s), ' +
-        (bytes / 1048576).toFixed(1) + ' MB de fotos. ' + enviados + ' ya enviado(s).';
+      $('infoEspacio').textContent = regs.length + ' foto(s) guardada(s), ' +
+        (bytes / 1048576).toFixed(1) + ' MB. ' + enviados + ' ya enviada(s).';
       $('btnBorrarEnviados').disabled = enviados === 0;
     });
   }
@@ -771,20 +683,15 @@
     });
 
     // GPS
-    $('chipGps').addEventListener('click', function () {
+    $('btnActualizarGps').addEventListener('click', function () {
       iniciarGps();
-      brindis('Actualizando ubicacion...');
+      brindis('Buscando la ubicacion de nuevo...');
     });
 
     // Captura
     $('btnFoto').addEventListener('click', function () {
       var inp = $('entradaFoto');
       inp.setAttribute('capture', 'environment');
-      inp.click();
-    });
-    $('btnGaleria').addEventListener('click', function () {
-      var inp = $('entradaFoto');
-      inp.removeAttribute('capture');
       inp.click();
     });
     $('entradaFoto').addEventListener('change', function (e) {
@@ -815,13 +722,8 @@
     });
 
     // Registros
-    $('btnExportarCSV').addEventListener('click', function () { exportar('csv'); });
-    $('btnExportarGeo').addEventListener('click', function () { exportar('geojson'); });
-    $('btnExportarKML').addEventListener('click', function () { exportar('kml'); });
-    $('btnResumenWA').addEventListener('click', resumenWhatsApp);
-
     // Ajustes
-    ['aNombre', 'aZona', 'aTelefono', 'aTamano', 'aMarca'].forEach(function (id) {
+    ['aNombre', 'aZona'].forEach(function (id) {
       $(id).addEventListener('change', guardarAjustes);
     });
     $('btnBorrarEnviados').addEventListener('click', function () {
@@ -831,9 +733,9 @@
         if (!confirm('Borrar ' + enviados.length + ' registro(s) ya enviado(s)?')) return;
         return Promise.all(enviados.map(function (r) { return T.Store.borrar(r.id); }))
           .then(function () {
-            brindis('Registros enviados borrados');
+            brindis('Fotos ya enviadas borradas');
             mostrarEspacio();
-            actualizarGlobo();
+            pintarPendientes();
           });
       });
     });
@@ -860,7 +762,7 @@
 
     cargarAjustes();
     conectar();
-    actualizarGlobo();
+    pintarPendientes();
     montarInstalacion();
 
     if (estado_() === 'app') {
